@@ -1,0 +1,14 @@
+# Gelo intenso: sotto la soglia di temperatura esterna la pompa di calore
+# viene esclusa e resta solo il pavimento.
+nome: Gelo esterno
+stagione: inverno
+durata_ore: 10
+passo_min: 5
+fonte: auto
+iniziale: {t: 18.0, m: 18.0, esterna: -5.0}
+setpoint: [{da_ora: 0, valore: 20.5}]
+eventi:
+  - {ora: 3, esterna: -18.0}
+attese:
+  pdc_off_dopo_ora: 3.1
+  max_commutazioni_pav: 10   # ~1 commutazione/ora al massimo

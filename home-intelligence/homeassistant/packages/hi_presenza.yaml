@@ -1,0 +1,320 @@
+# =============================================================================
+# HOME INTELLIGENCE – Presenza e modalità Casa/Assente
+# =============================================================================
+# Fonte primaria: entità person (Companion App) → zone.home (conteggio nativo
+# delle persone in casa). Fonti complementari (facoltative, non presunte):
+# sensori con etichetta hi_presenza_supplementare, modalità ospiti, override.
+#
+# Stato di occupazione (sensor.hi_occupazione):
+#   occupata | vuota | incerta
+#   "incerta" = nessuno risulta in casa ma almeno un tracker non si aggiorna da
+#   troppo tempo: in questo caso NON si attiva la modalità Assente (prudenza).
+#
+# Nessun sistema critico dipende solo dalla geolocalizzazione: le azioni
+# all'uscita spengono solo carichi non essenziali; il clima passa a setpoint
+# di assenza (comunque riscaldato) e solo se l'attuazione è abilitata.
+# =============================================================================
+
+input_select:
+  hi_presenza_override:
+    name: Override presenza
+    icon: mdi:account-question
+    options: [automatico, forza_presente, forza_assente]
+
+input_number:
+  hi_assenza_ritardo_min:
+    name: Ritardo attivazione Assente
+    icon: mdi:timer-sand
+    min: 0
+    max: 60
+    step: 1
+    unit_of_measurement: min
+    mode: box
+  hi_tracker_obsoleto_ore:
+    name: Tracker obsoleto dopo
+    icon: mdi:map-marker-alert
+    min: 1
+    max: 48
+    step: 1
+    unit_of_measurement: h
+    mode: box
+
+input_boolean:
+  hi_prepara_arrivo:
+    name: Preparazione arrivo (zona "vicino casa")
+    icon: mdi:home-import-outline
+
+template:
+  - binary_sensor:
+      - name: Presenza da sensori supplementari
+        unique_id: hi_presenza_supplementare
+        default_entity_id: binary_sensor.hi_presenza_supplementare
+        device_class: occupancy
+        # Mantiene "on" 15 minuti dopo l'ultimo movimento.
+        delay_off:
+          minutes: 15
+        state: >
+          {% from 'hi_common.jinja' import hi_qualcuno_on %}
+          {{ hi_qualcuno_on('hi_presenza_supplementare') == 'on' }}
+        attributes:
+          sensori_configurati: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {{ hi_ruolo('hi_presenza_supplementare') | from_json | count }}
+
+  - sensor:
+      - name: Persone in casa
+        unique_id: hi_persone_in_casa
+        default_entity_id: sensor.hi_persone_in_casa
+        icon: mdi:account-group
+        unit_of_measurement: persone
+        state: "{{ states('zone.home') | int(0) }}"
+        attributes:
+          in_casa: >
+            {{ states.person | selectattr('state', 'eq', 'home') | map(attribute='name') | list }}
+          fuori: >
+            {{ states.person | rejectattr('state', 'eq', 'home') | map(attribute='name') | list }}
+          # Persone con almeno un dispositivo di localizzazione associato.
+          persone_tracciate: >
+            {{ states.person | selectattr('attributes.device_trackers', 'defined')
+               | selectattr('attributes.device_trackers') | list | count }}
+          tracker_obsoleti: >
+            {% set ore = states('input_number.hi_tracker_obsoleto_ore') | float(12) %}
+            {% set ns = namespace(l=[]) %}
+            {% for p in states.person | selectattr('attributes.device_trackers', 'defined')
+                  | selectattr('attributes.device_trackers') %}
+              {% set src = p.attributes.source | default(none) %}
+              {% set s = states[src] if src else none %}
+              {% if s is none or s.state in ['unavailable', 'unknown']
+                    or (now() - s.last_reported).total_seconds() > ore * 3600 %}
+                {% set ns.l = ns.l + [p.name] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.l }}
+
+      - name: Occupazione casa
+        unique_id: hi_occupazione
+        default_entity_id: sensor.hi_occupazione
+        icon: >
+          {{ {'occupata': 'mdi:home-account', 'vuota': 'mdi:home-outline'}.get(this.state, 'mdi:home-alert') }}
+        state: >
+          {% set ov = states('input_select.hi_presenza_override') %}
+          {% set n = states('zone.home') | int(0) %}
+          {% set obsoleti = state_attr('sensor.hi_persone_in_casa', 'tracker_obsoleti') or [] %}
+          {% if ov == 'forza_presente' %}occupata
+          {% elif ov == 'forza_assente' %}vuota
+          {% elif n > 0 or is_state('input_boolean.hi_ospiti', 'on')
+               or is_state('binary_sensor.hi_presenza_supplementare', 'on') %}occupata
+          {% elif state_attr('sensor.hi_persone_in_casa', 'persone_tracciate') | int(0) == 0 %}incerta
+          {% elif obsoleti | count > 0 %}incerta
+          {% else %}vuota{% endif %}
+        attributes:
+          motivo: >
+            {% set ov = states('input_select.hi_presenza_override') %}
+            {% if ov != 'automatico' %}override manuale ({{ ov }})
+            {% elif states('zone.home') | int(0) > 0 %}persone in casa
+            {% elif is_state('input_boolean.hi_ospiti', 'on') %}modalità ospiti
+            {% elif is_state('binary_sensor.hi_presenza_supplementare', 'on') %}movimento rilevato
+            {% elif state_attr('sensor.hi_persone_in_casa', 'persone_tracciate') | int(0) == 0 %}nessuna persona con telefono associato
+            {% elif (state_attr('sensor.hi_persone_in_casa', 'tracker_obsoleti') or []) | count > 0 %}posizione non aggiornata
+            {% else %}tutti fuori{% endif %}
+
+automation:
+  # ---------------------------------------------------------------------------
+  # Tutti fuori (vuota) per N minuti → Assente
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_assente
+    alias: HI · Presenza · Tutti fuori → Assente
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: sensor.hi_occupazione
+        to: vuota
+        for:
+          minutes: "{{ states('input_number.hi_assenza_ritardo_min') | int(10) }}"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: input_select.hi_modo_casa
+        state: [Casa, Notte]
+      # Verifica contro falsi allarmi: nessun movimento recente
+      # (se non ci sono sensori supplementari lo stato non è "on").
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: binary_sensor.hi_presenza_supplementare
+            state: "on"
+    actions:
+      - action: script.hi_imposta_modo
+        data:
+          modo: Assente
+          origine: presenza (tutti fuori)
+
+  # ---------------------------------------------------------------------------
+  # Qualcuno in casa → Casa (o Notte se in fascia notturna)
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_rientro
+    alias: HI · Presenza · Rientro → Casa
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: sensor.hi_occupazione
+        to: occupata
+        not_from: [unknown, unavailable]
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: input_select.hi_modo_casa
+        state: [Assente, Vacanza]
+    actions:
+      - variables:
+          era_vacanza: "{{ is_state('input_select.hi_modo_casa', 'Vacanza') }}"
+      - action: script.hi_imposta_modo
+        data:
+          modo: "{{ 'Notte' if is_state('binary_sensor.hi_fascia_notturna', 'on') else 'Casa' }}"
+          origine: presenza (rientro)
+      - if:
+          - condition: template
+            value_template: "{{ era_vacanza }}"
+        then:
+          - action: script.hi_notifica
+            data:
+              livello: importante
+              id: hi_fine_vacanza
+              titolo: Modalità vacanza terminata
+              messaggio: "Rilevata presenza in casa ({{ state_attr('sensor.hi_occupazione', 'motivo') }})."
+
+  # ---------------------------------------------------------------------------
+  # Arrivo: luci ingresso se buio e la casa era vuota
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_arrivo_luci
+    alias: HI · Presenza · Arrivo con buio → luci ingresso
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: zone.home
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int(0) > trigger.from_state.state | int(0) }}"
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
+    actions:
+      - variables:
+          luci: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ hi_comandabili('hi_luce_ingresso') | from_json }}
+      - if:
+          - condition: template
+            value_template: "{{ luci | count > 0 }}"
+        then:
+          - action: homeassistant.turn_on
+            target:
+              entity_id: "{{ luci }}"
+      - delay:
+          minutes: 2
+
+  # ---------------------------------------------------------------------------
+  # Uscita (modalità → Assente): spegne luci e carichi non essenziali.
+  # Il clima passa automaticamente al setpoint di assenza tramite il calcolo
+  # del setpoint (nessun comando diretto qui).
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_uscita
+    alias: HI · Presenza · Assente → spegni carichi non essenziali
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: input_select.hi_modo_casa
+        to: [Assente, Vacanza]
+        not_from: [unknown, unavailable]
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+    actions:
+      - action: script.hi_spegni_non_essenziali
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_uscita
+          titolo: Casa in modalità {{ states('input_select.hi_modo_casa') }}
+          messaggio: Luci e carichi non essenziali spenti.
+
+  # ---------------------------------------------------------------------------
+  # Posizione non aggiornata: avviso informativo (una volta per evento)
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_tracker_obsoleto
+    alias: HI · Presenza · Tracker non aggiornato
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: sensor.hi_occupazione
+        to: incerta
+        for:
+          minutes: 30
+    conditions:
+      - condition: template
+        value_template: "{{ state_attr('sensor.hi_persone_in_casa', 'persone_tracciate') | int(0) > 0 }}"
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_tracker_obsoleto
+          titolo: Presenza incerta
+          messaggio: >-
+            Posizione non aggiornata per: {{ state_attr('sensor.hi_persone_in_casa', 'tracker_obsoleti') | join(', ') }}.
+            La modalità Assente non verrà attivata automaticamente.
+
+  # ---------------------------------------------------------------------------
+  # Predisposto (disattivato di default): preparazione all'avvicinamento.
+  # Richiede una zona "vicino_casa" creata dall'interfaccia (coordinate NON nel
+  # repository) e hi_prepara_arrivo = on.
+  # ---------------------------------------------------------------------------
+  - id: hi_presenza_avvicinamento
+    alias: HI · Presenza · Avvicinamento → prepara casa (predisposto)
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: zone.vicino_casa
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.state | int(0) > trigger.from_state.state | int(0) }}"
+      - condition: state
+        entity_id: input_boolean.hi_prepara_arrivo
+        state: "on"
+      - condition: state
+        entity_id: input_select.hi_modo_casa
+        state: Assente
+    actions:
+      # Unico effetto: anticipa il setpoint di comfort uscendo da "Assente".
+      # Il comando reale ai dispositivi dipende comunque dal consenso
+      # all'attuazione del modulo clima.
+      - action: script.hi_imposta_modo
+        data:
+          modo: Casa
+          origine: avvicinamento (zona vicino_casa)
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_avvicinamento
+          titolo: Preparazione arrivo
+          messaggio: "Rilevato avvicinamento, modalità Casa anticipata."

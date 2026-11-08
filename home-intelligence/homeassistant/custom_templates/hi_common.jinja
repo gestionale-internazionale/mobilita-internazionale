@@ -1,0 +1,104 @@
+{#- ==========================================================================
+    HOME INTELLIGENCE – macro comuni (strato di astrazione sui dispositivi)
+    --------------------------------------------------------------------------
+    Le logiche NON usano entity_id specifici: risolvono un "ruolo" tramite le
+    etichette (labels) di Home Assistant.
+
+    Separazione simulazione / reale:
+      - se input_boolean.sim_ambiente_simulato è "on" (solo in sviluppo), i
+        ruoli vengono risolti SOLO con entità "sim_*";
+      - altrimenti SOLO con entità reali (le "sim_*" vengono scartate).
+      Le due famiglie non vengono mai mescolate.
+
+    Le macro restituiscono stringhe: liste/oggetti in JSON (usare | from_json),
+    numeri come testo, stringa vuota = dato non disponibile.
+    ========================================================================== -#}
+
+{%- macro hi_sim_attiva() -%}
+{{- is_state('input_boolean.sim_ambiente_simulato', 'on') -}}
+{%- endmacro -%}
+
+{#- Elenco entità (JSON) con l'etichetta indicata, coerenti con l'ambiente. -#}
+{%- macro hi_ruolo(etichetta) -%}
+{%- set sim = is_state('input_boolean.sim_ambiente_simulato', 'on') -%}
+{%- set ns = namespace(l=[]) -%}
+{%- for e in label_entities(etichetta) -%}
+{%- if (e.split('.')[1].startswith('sim_')) == sim -%}
+{%- set ns.l = ns.l + [e] -%}
+{%- endif -%}
+{%- endfor -%}
+{{- ns.l | to_json -}}
+{%- endmacro -%}
+
+{#- Media dei valori numerici validi delle entità del ruolo ('' se nessuno). -#}
+{%- macro hi_media(etichetta, decimali=1) -%}
+{%- set ns = namespace(v=[]) -%}
+{%- for e in hi_ruolo(etichetta) | from_json -%}
+{%- set s = states(e) -%}
+{%- if s | is_number -%}{%- set ns.v = ns.v + [s | float] -%}{%- endif -%}
+{%- endfor -%}
+{%- if ns.v | count > 0 -%}{{- (ns.v | sum / ns.v | count) | round(decimali) -}}{%- endif -%}
+{%- endmacro -%}
+
+{#- Numero di entità del ruolo con valore numerico valido. -#}
+{%- macro hi_validi(etichetta) -%}
+{%- set ns = namespace(n=0) -%}
+{%- for e in hi_ruolo(etichetta) | from_json -%}
+{%- if states(e) | is_number -%}{%- set ns.n = ns.n + 1 -%}{%- endif -%}
+{%- endfor -%}
+{{- ns.n -}}
+{%- endmacro -%}
+
+{#- Potenza del primo sensore valido del ruolo, normalizzata in W. -#}
+{%- macro hi_potenza_w(etichetta) -%}
+{%- set ns = namespace(v='') -%}
+{%- for e in hi_ruolo(etichetta) | from_json -%}
+{%- if ns.v == '' and states(e) | is_number -%}
+{%- set u = state_attr(e, 'unit_of_measurement') | default('W', true) -%}
+{%- set k = {'W': 1, 'kW': 1000, 'MW': 1000000}.get(u, none) -%}
+{%- if k is not none -%}{%- set ns.v = (states(e) | float * k) | round(0) -%}{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{{- ns.v -}}
+{%- endmacro -%}
+
+{#- Energia del primo sensore valido del ruolo, normalizzata in kWh. -#}
+{%- macro hi_energia_kwh(etichetta) -%}
+{%- set ns = namespace(v='') -%}
+{%- for e in hi_ruolo(etichetta) | from_json -%}
+{%- if ns.v == '' and states(e) | is_number -%}
+{%- set u = state_attr(e, 'unit_of_measurement') | default('kWh', true) -%}
+{%- set k = {'Wh': 0.001, 'kWh': 1, 'MWh': 1000}.get(u, none) -%}
+{%- if k is not none -%}{%- set ns.v = (states(e) | float * k) | round(3) -%}{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{{- ns.v -}}
+{%- endmacro -%}
+
+{#- Valore percentuale (es. SoC) del primo sensore valido del ruolo. -#}
+{%- macro hi_percentuale(etichetta) -%}
+{%- set ns = namespace(v='') -%}
+{%- for e in hi_ruolo(etichetta) | from_json -%}
+{%- if ns.v == '' and states(e) | is_number -%}{%- set ns.v = states(e) | float | round(1) -%}{%- endif -%}
+{%- endfor -%}
+{{- ns.v -}}
+{%- endmacro -%}
+
+{#- 'on' se almeno un'entità del ruolo è attiva, 'off' altrimenti,
+    '' se nessuna entità del ruolo è disponibile. -#}
+{%- macro hi_qualcuno_on(etichetta) -%}
+{%- set ent = hi_ruolo(etichetta) | from_json -%}
+{%- set disp = ent | reject('is_state', ['unavailable', 'unknown']) | list -%}
+{%- if disp | count == 0 -%}{%- elif disp | select('is_state', ['on', 'open', 'home', 'detected']) | list | count > 0 -%}on{%- else -%}off{%- endif -%}
+{%- endmacro -%}
+
+{#- Entità del ruolo disponibili (non unavailable/unknown), JSON. -#}
+{%- macro hi_disponibili(etichetta) -%}
+{{- hi_ruolo(etichetta) | from_json | reject('is_state', ['unavailable', 'unknown']) | list | to_json -}}
+{%- endmacro -%}
+
+{#- Entità comandabili da scenari/automazioni massive: ruolo meno "hi_critico". -#}
+{%- macro hi_comandabili(etichetta) -%}
+{%- set critici = label_entities('hi_critico') -%}
+{{- hi_ruolo(etichetta) | from_json | reject('in', critici) | reject('is_state', ['unavailable', 'unknown']) | list | to_json -}}
+{%- endmacro -%}

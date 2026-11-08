@@ -1,0 +1,23 @@
+# Runtime di sviluppo e ambienti
+dev/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+# Pacchetto di simulazione copiato dagli script (mai in produzione)
+homeassistant/packages/zz_simulazione/
+# File runtime di Home Assistant (se la cartella viene usata direttamente)
+homeassistant/.storage/
+homeassistant/.cloud/
+homeassistant/deps/
+homeassistant/tts/
+homeassistant/blueprints/
+homeassistant/*.db
+homeassistant/*.db-*
+homeassistant/*.log*
+homeassistant/.HA_VERSION
+homeassistant/known_devices.yaml
+homeassistant/secrets.yaml
+homeassistant/.ha_run.lock
+# Report di test
+tests/report/

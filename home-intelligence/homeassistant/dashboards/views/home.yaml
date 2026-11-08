@@ -1,0 +1,170 @@
+# Vista HOME – sintesi della casa (pensata per smartphone).
+title: Home
+path: home
+icon: mdi:home
+type: sections
+max_columns: 3
+badges:
+  - type: entity
+    entity: sensor.hi_occupazione
+    show_name: false
+  - type: entity
+    entity: sensor.hi_temperatura_esterna
+    show_name: false
+  - type: entity
+    entity: sensor.hi_entita_offline
+    name: Offline
+    visibility:
+      - condition: numeric_state
+        entity: sensor.hi_entita_offline
+        above: 0
+  - type: entity
+    entity: binary_sensor.hi_ambiente_simulazione
+    name: Simulazione
+    color: purple
+    visibility:
+      - condition: state
+        entity: binary_sensor.hi_ambiente_simulazione
+        state: "on"
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: Casa
+        heading_style: title
+        icon: mdi:home-variant
+      - type: markdown
+        content: >-
+          {% if is_state('binary_sensor.hi_ambiente_simulazione','on') %}<ha-alert alert-type="warning"
+          title="Ambiente di simulazione">Dati e dispositivi [SIM] sono virtuali.</ha-alert>{% endif %}
+          {% set n = states('sensor.hi_entita_offline') | int(0) %}{% if n > 0 %}<ha-alert alert-type="error">{{ n }}
+          dispositivi non disponibili · vedi Diagnostica</ha-alert>{% endif %}
+          **{{ states('input_select.hi_modo_casa') }}** · profilo {{ states('input_select.hi_profilo_energia') }}
+          · {{ states('sensor.hi_occupazione') }}
+          {%- if states('input_text.hi_ultimo_scenario') not in ['', 'unknown'] %}<br><small>Ultimo scenario:
+          {{ states('input_text.hi_ultimo_scenario') }}</small>{% endif %}
+      - type: tile
+        entity: input_select.hi_modo_casa
+        name: Modalità
+        features:
+          - type: select-options
+        features_position: bottom
+        grid_options:
+          columns: 12
+      - type: tile
+        entity: script.hi_scenario_buongiorno
+        name: Buongiorno
+        icon: mdi:weather-sunset-up
+        hide_state: true
+        vertical: true
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_buongiorno
+        grid_options:
+          columns: 4
+      - type: tile
+        entity: script.hi_scenario_buonanotte
+        name: Buonanotte
+        icon: mdi:weather-night
+        hide_state: true
+        vertical: true
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_buonanotte
+        grid_options:
+          columns: 4
+      - type: tile
+        entity: script.hi_scenario_esco
+        name: Esco
+        icon: mdi:exit-run
+        hide_state: true
+        vertical: true
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_esco
+        grid_options:
+          columns: 4
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Clima
+        heading_style: title
+        icon: mdi:thermostat
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/clima
+      - type: tile
+        entity: sensor.hi_inferiore_temperatura
+        name: Piano inferiore
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/clima
+      - type: tile
+        entity: sensor.hi_mansarda_temperatura
+        name: Mansarda
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/clima
+      - type: tile
+        entity: sensor.hi_inferiore_supervisore
+        name: Supervisore inferiore
+      - type: tile
+        entity: sensor.hi_mansarda_supervisore
+        name: Supervisore mansarda
+      - type: tile
+        entity: input_select.hi_clima_stagione
+        name: Stagione
+        features:
+          - type: select-options
+        features_position: bottom
+        grid_options:
+          columns: 12
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Persone ed energia
+        heading_style: title
+        icon: mdi:account-group
+      - type: tile
+        entity: sensor.hi_persone_in_casa
+        name: In casa
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/persone
+      - type: tile
+        entity: input_boolean.hi_ospiti
+        name: Ospiti
+        tap_action:
+          action: toggle
+      - type: tile
+        entity: sensor.hi_en_pv_potenza
+        name: Fotovoltaico
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/energia
+      - type: tile
+        entity: sensor.hi_en_casa_potenza
+        name: Consumo casa
+        tap_action:
+          action: navigate
+          navigation_path: /home-intelligence/energia
+      - type: tile
+        entity: sensor.hi_en_batt_soc
+        name: Batteria
+        visibility:
+          - condition: state
+            entity: sensor.hi_en_batt_soc
+            state_not: unavailable
+      - type: tile
+        entity: sensor.hi_en_consiglio
+        name: Consiglio energetico
+      - type: markdown
+        visibility:
+          - condition: state
+            entity: sensor.hi_en_pv_potenza
+            state: unavailable
+        content: >-
+          <ha-alert alert-type="info">Fotovoltaico e accumulo <b>non ancora disponibili</b>:
+          la sezione si attiverà associando i sensori dell'inverter.</ha-alert>

@@ -1,0 +1,181 @@
+# =============================================================================
+# HOME INTELLIGENCE – Modello digitale dell'abitazione (sorgente unica di verità)
+# =============================================================================
+# Questo file descrive piani, ambienti, zone termiche, persone ed etichette
+# funzionali. Dopo ogni modifica:
+#
+#   python3 scripts/hi_tool.py generate     # rigenera pacchetti, viste, planimetrie
+#   python3 scripts/hi_tool.py sync --apply # allinea floors/areas/labels in HA
+#
+# ATTENZIONE: la suddivisione degli ambienti qui sotto è PROVVISORIA.
+# Gli ambienti reali non sono ancora noti: sostituisci id/nome quando avrai
+# l'elenco definitivo (vedi docs/dati-richiesti.md).
+#
+# Convenzioni:
+#  - gli "id" sono slug minuscoli [a-z0-9_]; diventano floor_id / area_id in HA
+#  - "planimetria" indica il rettangolo dell'ambiente sulla planimetria
+#    schematica, in percentuale (0–100) della larghezza/altezza dell'immagine
+# =============================================================================
+
+versione: 1
+
+planimetria:
+  stato: provvisoria          # provvisoria | definitiva
+  larghezza: 1000             # dimensioni del viewBox SVG generato
+  altezza: 640
+
+piani:
+  - id: piano_inferiore
+    nome: Piano inferiore
+    livello: 0
+    icona: mdi:home-floor-0
+    # Per usare una planimetria reale: copia l'immagine in
+    # homeassistant/www/floorplans/ e indica qui il nome file.
+    immagine: null            # es. piano_inferiore_reale.png
+  - id: mansarda
+    nome: Mansarda
+    livello: 1
+    icona: mdi:home-roof
+    immagine: null
+
+aree:
+  # --- Piano inferiore (PROVVISORIO) ---------------------------------------
+  - id: inferiore_giorno
+    nome: Zona giorno
+    piano: piano_inferiore
+    icona: mdi:sofa
+    provvisoria: true
+    planimetria: {x: 3, y: 5, w: 55, h: 58}
+  - id: inferiore_cucina
+    nome: Cucina
+    piano: piano_inferiore
+    icona: mdi:countertop
+    provvisoria: true
+    planimetria: {x: 60, y: 5, w: 37, h: 40}
+  - id: inferiore_ingresso
+    nome: Ingresso
+    piano: piano_inferiore
+    icona: mdi:door
+    provvisoria: true
+    planimetria: {x: 60, y: 48, w: 37, h: 47}
+  - id: inferiore_servizi
+    nome: Servizi
+    piano: piano_inferiore
+    icona: mdi:shower
+    provvisoria: true
+    planimetria: {x: 3, y: 66, w: 55, h: 29}
+  # --- Mansarda (PROVVISORIO) ---------------------------------------------
+  - id: mansarda_principale
+    nome: Mansarda principale
+    piano: mansarda
+    icona: mdi:bed
+    provvisoria: true
+    planimetria: {x: 3, y: 5, w: 60, h: 90}
+  - id: mansarda_secondaria
+    nome: Mansarda secondaria
+    piano: mansarda
+    icona: mdi:desk
+    provvisoria: true
+    planimetria: {x: 65, y: 5, w: 32, h: 90}
+  # --- Aree senza piano ----------------------------------------------------
+  - id: esterno
+    nome: Esterno
+    piano: null
+    icona: mdi:tree
+    provvisoria: false
+  - id: locale_tecnico
+    nome: Locale tecnico
+    piano: null
+    icona: mdi:hvac
+    provvisoria: true
+
+# Zone termiche gestite dal supervisore. Ogni zona genera i propri helper,
+# sensori aggregati, supervisore e attuazione (packages/generated/hi_zone.yaml).
+zone_termiche:
+  - id: inferiore
+    nome: Piano inferiore
+    piano: piano_inferiore
+    # Fonti termiche previste nella zona. IPOTESI da verificare: entrambe
+    # le zone hanno pavimento radiante e almeno una unità Daikin.
+    fonti: [pavimento, pompa_di_calore]
+    predefiniti:
+      comfort: 20.5
+      eco: 18.5
+      raffrescamento: 26.0
+      feriali: {inizio: "06:30", fine: "22:30"}
+      festivi: {inizio: "08:00", fine: "23:00"}
+  - id: mansarda
+    nome: Mansarda
+    piano: mansarda
+    fonti: [pavimento, pompa_di_calore]
+    predefiniti:
+      comfort: 20.0
+      eco: 18.0
+      raffrescamento: 26.0
+      feriali: {inizio: "06:30", fine: "08:00"}
+      festivi: {inizio: "08:00", fine: "10:00"}
+
+# Persone: elenco degli entity_id "person.*" creati dall'interfaccia di HA
+# (Impostazioni → Persone). Usato per generare le card della vista Persone.
+# Il riconoscimento di presenza funziona anche con elenco vuoto, perché si basa
+# su zone.home (conteggio nativo delle persone in casa).
+persone: []
+#  - person.nome_cognome
+
+# Etichette funzionali (HA labels). Le automazioni e il supervisore NON fanno
+# riferimento a entity_id specifici: lavorano su queste etichette.
+# Per associare un dispositivo a una funzione basta assegnargli l'etichetta
+# (da inventory/devices.yaml + sync, oppure dall'interfaccia di HA).
+etichette:
+  # --- Illuminazione e carichi ---
+  - {id: hi_luce, nome: "HI · Luce", icona: mdi:lightbulb, colore: amber,
+     descrizione: "Luci/interruttori gestiti da scenari e modalità"}
+  - {id: hi_luce_ingresso, nome: "HI · Luce ingresso", icona: mdi:door-open, colore: amber,
+     descrizione: "Luci accese all'arrivo quando è buio"}
+  - {id: hi_luce_notturna, nome: "HI · Luce notturna", icona: mdi:weather-night, colore: indigo,
+     descrizione: "Luci di cortesia lasciate accese/consentite di notte"}
+  - {id: hi_carico_non_essenziale, nome: "HI · Carico non essenziale", icona: mdi:power-plug-off, colore: orange,
+     descrizione: "Prese/carichi spegnibili all'uscita"}
+  - {id: hi_carico_programmabile, nome: "HI · Carico programmabile", icona: mdi:calendar-clock, colore: teal,
+     descrizione: "Elettrodomestici candidati alla gestione energetica (futuro)"}
+  - {id: hi_critico, nome: "HI · Critico", icona: mdi:shield-alert, colore: red,
+     descrizione: "MAI comandato da scenari o automazioni massive (frigo, rete, allarme…)"}
+  - {id: hi_monitorato, nome: "HI · Monitorato", icona: mdi:radar, colore: blue-grey,
+     descrizione: "Entità di cui notificare l'indisponibilità"}
+  # --- Presenza ---
+  - {id: hi_presenza_supplementare, nome: "HI · Presenza supplementare", icona: mdi:motion-sensor, colore: green,
+     descrizione: "Sensori di movimento/occupazione che indicano casa occupata"}
+  # --- Clima: sensori e attuatori per zona ---
+  - {id: hi_temp_inferiore, nome: "HI · Temperatura piano inferiore", icona: mdi:thermometer, colore: deep-orange,
+     descrizione: "Sensori di temperatura ambiente della zona inferiore (media)"}
+  - {id: hi_temp_mansarda, nome: "HI · Temperatura mansarda", icona: mdi:thermometer, colore: deep-orange,
+     descrizione: "Sensori di temperatura ambiente della mansarda (media)"}
+  - {id: hi_umidita_inferiore, nome: "HI · Umidità piano inferiore", icona: mdi:water-percent, colore: cyan}
+  - {id: hi_umidita_mansarda, nome: "HI · Umidità mansarda", icona: mdi:water-percent, colore: cyan}
+  - {id: hi_temp_esterna, nome: "HI · Temperatura esterna", icona: mdi:thermometer-lines, colore: light-blue}
+  - {id: hi_finestra_inferiore, nome: "HI · Finestre piano inferiore", icona: mdi:window-open-variant, colore: brown}
+  - {id: hi_finestra_mansarda, nome: "HI · Finestre mansarda", icona: mdi:window-open-variant, colore: brown}
+  - {id: hi_pdc_inferiore, nome: "HI · Pompa di calore piano inferiore", icona: mdi:heat-pump, colore: purple,
+     descrizione: "Entità climate Daikin della zona inferiore"}
+  - {id: hi_pdc_mansarda, nome: "HI · Pompa di calore mansarda", icona: mdi:heat-pump, colore: purple}
+  - {id: hi_termostato_inferiore, nome: "HI · Termostato pavimento inferiore", icona: mdi:heating-coil, colore: pink,
+     descrizione: "Entità climate del termostato che governa il pavimento radiante"}
+  - {id: hi_termostato_mansarda, nome: "HI · Termostato pavimento mansarda", icona: mdi:heating-coil, colore: pink}
+  # --- Energia: ruoli indipendenti dal produttore dell'inverter ---
+  - {id: hi_en_pv_potenza, nome: "HI · FV potenza", icona: mdi:solar-power, colore: yellow}
+  - {id: hi_en_pv_energia, nome: "HI · FV energia prodotta", icona: mdi:solar-power-variant, colore: yellow}
+  - {id: hi_en_rete_prelievo_potenza, nome: "HI · Rete prelievo potenza", icona: mdi:transmission-tower-import, colore: red}
+  - {id: hi_en_rete_immissione_potenza, nome: "HI · Rete immissione potenza", icona: mdi:transmission-tower-export, colore: green}
+  - {id: hi_en_rete_potenza_netta, nome: "HI · Rete potenza netta (+prelievo/−immissione)", icona: mdi:transmission-tower, colore: grey}
+  - {id: hi_en_rete_prelievo_energia, nome: "HI · Rete energia prelevata", icona: mdi:transmission-tower-import, colore: red}
+  - {id: hi_en_rete_immissione_energia, nome: "HI · Rete energia immessa", icona: mdi:transmission-tower-export, colore: green}
+  - {id: hi_en_casa_potenza, nome: "HI · Consumo casa potenza", icona: mdi:home-lightning-bolt, colore: blue}
+  - {id: hi_en_batt_soc, nome: "HI · Batteria stato di carica", icona: mdi:battery-high, colore: lime}
+  - {id: hi_en_batt_carica_potenza, nome: "HI · Batteria potenza carica", icona: mdi:battery-arrow-up, colore: lime}
+  - {id: hi_en_batt_scarica_potenza, nome: "HI · Batteria potenza scarica", icona: mdi:battery-arrow-down, colore: lime}
+  - {id: hi_en_batt_potenza_netta, nome: "HI · Batteria potenza netta (+scarica/−carica)", icona: mdi:battery-sync, colore: lime}
+  - {id: hi_en_batt_energia_carica, nome: "HI · Batteria energia caricata", icona: mdi:battery-plus, colore: lime}
+  - {id: hi_en_batt_energia_scarica, nome: "HI · Batteria energia scaricata", icona: mdi:battery-minus, colore: lime}
+  # --- Ambiente ---
+  - {id: hi_simulazione, nome: "HI · SIMULAZIONE", icona: mdi:test-tube, colore: purple,
+     descrizione: "Entità virtuali dell'ambiente di sviluppo. MAI presenti su Green."}

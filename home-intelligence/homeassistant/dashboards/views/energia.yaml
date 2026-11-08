@@ -1,0 +1,157 @@
+# Vista ENERGIA – usa i proxy hi_en_* (indipendenti dall'inverter).
+# Le card energy-* native diventano utili dopo aver configurato
+# Impostazioni → Pannelli di controllo → Energia (vedi docs/energia.md).
+title: Energia
+path: energia
+icon: mdi:lightning-bolt
+type: sections
+max_columns: 3
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: Flussi istantanei
+        heading_style: title
+        icon: mdi:transit-connection-variant
+      - type: markdown
+        visibility:
+          - condition: state
+            entity: sensor.hi_en_consiglio
+            state: non_configurato
+        content: >-
+          <ha-alert alert-type="info" title="Impianto non ancora integrato">Fotovoltaico,
+          batteria e misure di scambio sono <b>predisposti</b>. I valori compariranno dopo aver
+          assegnato le etichette di ruolo ai sensori dell'inverter (nessun dato fittizio).</ha-alert>
+      - type: tile
+        entity: sensor.hi_en_pv_potenza
+        name: Produzione FV
+        color: amber
+      - type: tile
+        entity: sensor.hi_en_casa_potenza
+        name: Consumo casa
+        color: blue
+      - type: tile
+        entity: sensor.hi_en_rete_prelievo
+        name: Prelievo rete
+        color: red
+      - type: tile
+        entity: sensor.hi_en_rete_immissione
+        name: Immissione rete
+        color: green
+      - type: tile
+        entity: sensor.hi_en_batt_carica
+        name: Batteria in carica
+        color: light-green
+      - type: tile
+        entity: sensor.hi_en_batt_scarica
+        name: Batteria in scarica
+        color: lime
+      - type: gauge
+        entity: sensor.hi_en_batt_soc
+        name: Stato di carica
+        min: 0
+        max: 100
+        severity:
+          red: 0
+          yellow: 20
+          green: 50
+      - type: gauge
+        entity: sensor.hi_en_autosufficienza
+        name: Autosufficienza
+        min: 0
+        max: 100
+        needle: true
+      - type: tile
+        entity: sensor.hi_en_batt_residua
+        name: Energia in batteria
+      - type: tile
+        entity: sensor.hi_en_consiglio
+        name: Consiglio
+        state_content: [state, descrizione]
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Oggi e mese
+        heading_style: title
+        icon: mdi:calendar-today
+      - type: tile
+        entity: sensor.hi_en_pv_oggi
+        name: Prodotta oggi
+      - type: tile
+        entity: sensor.hi_en_autoconsumo_oggi
+        name: Autoconsumata oggi
+      - type: tile
+        entity: sensor.hi_en_prelievo_oggi
+        name: Prelevata oggi
+      - type: tile
+        entity: sensor.hi_en_immissione_oggi
+        name: Immessa oggi
+      - type: tile
+        entity: sensor.hi_en_pv_mese
+        name: Prodotta nel mese
+      - type: tile
+        entity: sensor.hi_en_prelievo_mese
+        name: Prelevata nel mese
+      - type: heading
+        heading: Indicatori economici
+        heading_style: subtitle
+        icon: mdi:cash
+      - type: tile
+        entity: sensor.hi_en_costo_oggi
+        name: Costo oggi
+      - type: tile
+        entity: sensor.hi_en_ricavo_oggi
+        name: Ricavo oggi
+      - type: tile
+        entity: sensor.hi_en_risparmio_oggi
+        name: Risparmio autoconsumo
+        grid_options:
+          columns: 12
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Storico
+        heading_style: title
+        icon: mdi:chart-areaspline
+      - type: history-graph
+        title: Potenze (24 h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.hi_en_pv_potenza
+            name: FV
+          - entity: sensor.hi_en_casa_potenza
+            name: Casa
+          - entity: sensor.hi_en_rete_prelievo
+            name: Prelievo
+          - entity: sensor.hi_en_rete_immissione
+            name: Immissione
+      - type: statistics-graph
+        title: Energia giornaliera (30 giorni)
+        period: day
+        days_to_show: 30
+        chart_type: bar
+        stat_types: [change]
+        entities:
+          - entity: sensor.hi_en_pv_energia
+            name: Prodotta
+          - entity: sensor.hi_en_rete_prelievo_energia
+            name: Prelevata
+          - entity: sensor.hi_en_rete_immissione_energia
+            name: Immessa
+      - type: heading
+        heading: Parametri
+        heading_style: subtitle
+        icon: mdi:cog
+      - type: entities
+        state_color: true
+        entities:
+          - input_number.hi_en_batt_capacita
+          - input_number.hi_en_prezzo_acquisto
+          - input_number.hi_en_prezzo_vendita
+          - input_number.hi_en_soglia_surplus
+          - input_number.hi_en_soglia_prelievo
+          - input_boolean.hi_en_inverti_segno_rete
+          - input_boolean.hi_en_inverti_segno_batteria
+          - input_boolean.hi_en_gestione_carichi

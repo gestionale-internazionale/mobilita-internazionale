@@ -1,0 +1,360 @@
+# =============================================================================
+# HOME INTELLIGENCE – Core
+# Modalità della casa, interruttori generali, notifiche, avvio sicuro.
+# =============================================================================
+# Regole di progetto (anti-loop / anti-conflitto):
+#  1. input_select.hi_modo_casa ha UN SOLO scrittore: script.hi_imposta_modo.
+#  2. Le automazioni che reagiscono al cambio di modalità non cambiano a loro
+#     volta la modalità.
+#  3. Le automazioni a trigger di stato ignorano transizioni da/verso
+#     unknown/unavailable (riavvii, perdita di comunicazione).
+#  4. Nessuna azione su dispositivi nei primi 5 minuti dopo l'avvio di HA
+#     (binary_sensor.hi_sistema_pronto).
+#  5. Le entità con etichetta hi_critico non sono mai comandate in massa.
+# =============================================================================
+
+input_select:
+  hi_modo_casa:
+    name: Modalità casa
+    icon: mdi:home-switch
+    options: [Casa, Assente, Notte, Vacanza]
+  hi_profilo_energia:
+    name: Profilo comfort/energia
+    icon: mdi:leaf
+    options: [normale, comfort, risparmio]
+
+input_boolean:
+  hi_automazioni_attive:
+    name: Automazioni Home Intelligence attive
+    icon: mdi:robot
+  hi_ospiti:
+    name: Ospiti in casa
+    icon: mdi:account-multiple-plus
+  hi_notifiche_push:
+    name: Notifiche push attive
+    icon: mdi:cellphone-message
+  hi_inizializzato:
+    name: Valori predefiniti inizializzati
+    icon: mdi:check-decagram
+
+input_text:
+  # Servizi di notifica separati da virgola, es. "mobile_app_pixel_8,mobile_app_iphone"
+  # (vedi Impostazioni → Dispositivi → Mobile App). Nessun dato personale nel repo.
+  hi_notifica_destinatari:
+    name: Destinatari notifiche push
+    icon: mdi:account-voice
+    max: 255
+  hi_ultimo_scenario:
+    name: Ultimo scenario
+    icon: mdi:script-text-play
+    max: 100
+
+input_number:
+  hi_avvio_attesa_min:
+    name: Attesa dopo l'avvio prima di comandare dispositivi
+    icon: mdi:timer-lock
+    min: 0
+    max: 30
+    step: 1
+    unit_of_measurement: min
+    mode: box
+
+input_datetime:
+  hi_notte_inizio:
+    name: Inizio notte
+    has_date: false
+    has_time: true
+  hi_notte_fine:
+    name: Fine notte
+    has_date: false
+    has_time: true
+
+template:
+  # Istante dell'ultimo avvio di Home Assistant.
+  - triggers:
+      - trigger: homeassistant
+        event: start
+    sensor:
+      - name: Avvio Home Assistant
+        unique_id: hi_avvio_ha
+        default_entity_id: sensor.hi_avvio_ha
+        device_class: timestamp
+        state: "{{ now().isoformat() }}"
+        icon: mdi:restart
+
+  - binary_sensor:
+      # On N minuti (default 5) dopo l'avvio: prima nessun comando a dispositivi.
+      - name: Sistema pronto
+        unique_id: hi_sistema_pronto
+        default_entity_id: binary_sensor.hi_sistema_pronto
+        icon: mdi:shield-check
+        state: >
+          {% set a = states('sensor.hi_avvio_ha') | as_datetime %}
+          {% set attesa = states('input_number.hi_avvio_attesa_min') | float(5) * 60 %}
+          {{ a is not none and (now() - a).total_seconds() >= attesa }}
+
+      # Ambiente di simulazione attivo (solo sviluppo).
+      - name: Ambiente di simulazione
+        unique_id: hi_ambiente_simulazione
+        default_entity_id: binary_sensor.hi_ambiente_simulazione
+        icon: mdi:test-tube
+        state: "{{ is_state('input_boolean.sim_ambiente_simulato', 'on') }}"
+        attributes:
+          pacchetto_caricato: "{{ states('input_boolean.sim_ambiente_simulato') not in ['unknown', 'unavailable'] }}"
+
+      # Fascia notturna configurata.
+      - name: Fascia notturna
+        unique_id: hi_fascia_notturna
+        default_entity_id: binary_sensor.hi_fascia_notturna
+        icon: mdi:weather-night
+        state: >
+          {% set i = states('input_datetime.hi_notte_inizio') %}
+          {% set f = states('input_datetime.hi_notte_fine') %}
+          {% set o = now().strftime('%H:%M:%S') %}
+          {% if i in ['unknown','unavailable'] or f in ['unknown','unavailable'] %}false
+          {% elif i <= f %}{{ i <= o < f }}
+          {% else %}{{ o >= i or o < f }}{% endif %}
+
+  - sensor:
+      - name: Versione configurazione
+        unique_id: hi_versione
+        default_entity_id: sensor.hi_versione
+        icon: mdi:source-branch
+        state: "0.1.0"
+
+script:
+  # ---------------------------------------------------------------------------
+  # Unico punto di scrittura della modalità casa.
+  # ---------------------------------------------------------------------------
+  hi_imposta_modo:
+    alias: HI · Imposta modalità casa
+    icon: mdi:home-switch
+    mode: queued
+    max: 5
+    fields:
+      modo:
+        description: Casa | Assente | Notte | Vacanza
+        required: true
+        selector:
+          select:
+            options: [Casa, Assente, Notte, Vacanza]
+      origine:
+        description: Chi ha richiesto il cambio (per il registro)
+        default: manuale
+        selector:
+          text:
+    sequence:
+      - condition: template
+        value_template: >
+          {{ modo in ['Casa', 'Assente', 'Notte', 'Vacanza']
+             and not is_state('input_select.hi_modo_casa', modo) }}
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hi_modo_casa
+        data:
+          option: "{{ modo }}"
+      - action: logbook.log
+        data:
+          name: Home Intelligence
+          message: "Modalità casa → {{ modo }} (origine: {{ origine | default('manuale') }})"
+          entity_id: input_select.hi_modo_casa
+
+  # ---------------------------------------------------------------------------
+  # Notifica con livelli. info: solo registro; importante: notifica persistente
+  # + push (non di notte); critico: persistente + push sempre, priorità alta.
+  # Deduplicazione: "id" sostituisce la notifica precedente con lo stesso id.
+  # ---------------------------------------------------------------------------
+  hi_notifica:
+    alias: HI · Notifica
+    icon: mdi:bell-ring
+    mode: queued
+    max: 20
+    fields:
+      livello:
+        description: info | importante | critico
+        default: info
+        selector:
+          select:
+            options: [info, importante, critico]
+      titolo:
+        required: true
+        selector:
+          text:
+      messaggio:
+        required: true
+        selector:
+          text:
+            multiline: true
+      id:
+        description: Identificativo per deduplicare/aggiornare la notifica
+        default: hi_generica
+        selector:
+          text:
+    sequence:
+      - variables:
+          lv: "{{ livello | default('info') }}"
+          nid: "{{ id | default('hi_generica') }}"
+          notte: "{{ is_state('input_select.hi_modo_casa', 'Notte') }}"
+          destinatari: >
+            {{ states('input_text.hi_notifica_destinatari').split(',')
+               | map('trim') | select('match', '^[a-z0-9_]+$') | list }}
+          push: >
+            {{ is_state('input_boolean.hi_notifiche_push', 'on') and destinatari | count > 0
+               and (lv == 'critico' or (lv == 'importante' and not notte)) }}
+      - action: logbook.log
+        data:
+          name: "Home Intelligence [{{ lv }}]"
+          message: "{{ titolo }}: {{ messaggio }}"
+      - if:
+          - condition: template
+            value_template: "{{ lv in ['importante', 'critico'] }}"
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: "{{ nid }}"
+              title: "{{ '⚠️ ' if lv == 'critico' else '' }}{{ titolo }}"
+              message: "{{ messaggio }}"
+      - if:
+          - condition: template
+            value_template: "{{ push }}"
+        then:
+          - repeat:
+              for_each: "{{ destinatari }}"
+              sequence:
+                - action: "notify.{{ repeat.item }}"
+                  continue_on_error: true
+                  data:
+                    title: "{{ titolo }}"
+                    message: "{{ messaggio }}"
+                    data:
+                      tag: "{{ nid }}"
+                      priority: "{{ 'high' if lv == 'critico' else 'normal' }}"
+                      push:
+                        interruption-level: "{{ 'time-sensitive' if lv == 'critico' else 'active' }}"
+
+  # ---------------------------------------------------------------------------
+  # Valori predefiniti prudenti (rieseguibile: imposta hi_inizializzato a off).
+  # ---------------------------------------------------------------------------
+  hi_inizializza_predefiniti:
+    alias: HI · Ripristina valori predefiniti
+    icon: mdi:restore
+    mode: single
+    sequence:
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_modo_casa}
+        data: {option: Casa}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_profilo_energia}
+        data: {option: normale}
+      - action: input_boolean.turn_on
+        target: {entity_id: input_boolean.hi_automazioni_attive}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_avvio_attesa_min}
+        data: {value: 5}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_notte_inizio}
+        data: {time: "23:30:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_notte_fine}
+        data: {time: "06:30:00"}
+      # Presenza
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_presenza_override}
+        data: {option: automatico}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_assenza_ritardo_min}
+        data: {value: 10}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_tracker_obsoleto_ore}
+        data: {value: 12}
+      # Clima (globali) – valori prudenti, da tarare sull'impianto reale
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_clima_stagione}
+        data: {option: "{{ 'inverno' if now().month in [10, 11, 12, 1, 2, 3, 4] else 'estate' }}"}
+      - action: input_boolean.turn_off
+        target:
+          entity_id:
+            - input_boolean.hi_clima_controllo_automatico
+      - action: script.hi_clima_parametri_predefiniti
+      # Energia
+      - action: script.hi_energia_parametri_predefiniti
+      # Zone termiche (generato da inventory/house.yaml)
+      - action: script.hi_inizializza_zone
+
+automation:
+  # ---------------------------------------------------------------------------
+  # Primo avvio: imposta valori predefiniti prudenti negli helper (gli
+  # input_number senza "initial" conservano il valore tra i riavvii).
+  # ---------------------------------------------------------------------------
+  - id: hi_core_inizializza
+    alias: HI · Core · Inizializza valori predefiniti
+    description: Eseguita una sola volta (finché hi_inizializzato è off).
+    mode: single
+    triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: input_boolean.hi_inizializzato
+        to: "off"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_inizializzato
+        state: "off"
+    actions:
+      - action: script.hi_inizializza_predefiniti
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.hi_inizializzato
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_inizializzazione
+          titolo: Home Intelligence inizializzato
+          messaggio: >-
+            Valori predefiniti impostati. L'attuazione automatica del clima è
+            DISATTIVATA: abilitala solo dopo la verifica dei dispositivi.
+
+  # ---------------------------------------------------------------------------
+  # Fascia notturna: Casa → Notte e Notte → Casa.
+  # ---------------------------------------------------------------------------
+  - id: hi_core_notte_inizio
+    alias: HI · Modalità · Inizio notte
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_fascia_notturna
+        from: "off"
+        to: "on"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: input_select.hi_modo_casa
+        state: Casa
+    actions:
+      - action: script.hi_imposta_modo
+        data:
+          modo: Notte
+          origine: fascia notturna
+
+  - id: hi_core_notte_fine
+    alias: HI · Modalità · Fine notte
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_fascia_notturna
+        from: "on"
+        to: "off"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_automazioni_attive
+        state: "on"
+      - condition: state
+        entity_id: input_select.hi_modo_casa
+        state: Notte
+    actions:
+      - action: script.hi_imposta_modo
+        data:
+          modo: Casa
+          origine: fine fascia notturna

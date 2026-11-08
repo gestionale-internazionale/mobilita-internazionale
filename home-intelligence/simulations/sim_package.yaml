@@ -1,0 +1,457 @@
+# =============================================================================
+# HOME INTELLIGENCE – PACCHETTO DI SIMULAZIONE  (SOLO SVILUPPO)
+# =============================================================================
+# Questo file NON fa parte della configurazione di produzione.
+# scripts/dev-up.sh lo copia in homeassistant/packages/zz_simulazione/ (cartella
+# esclusa da git). Su Home Assistant Green NON deve mai essere copiato:
+# scripts/check_prod.sh e i test verificano che non ci sia.
+#
+# Convenzioni di separazione:
+#   - tutti gli entity_id iniziano con "sim_"
+#   - tutti i nomi iniziano con "[SIM]"
+#   - etichetta hi_simulazione (assegnata da hi_tool.py sync --profilo dev)
+#   - input_boolean.sim_ambiente_simulato = on → le logiche usano SOLO le
+#     entità sim_*; off → SOLO quelle reali (utile per provare dispositivi
+#     reali raggiungibili dal computer di sviluppo).
+#
+# Modello fisico (semplificato, solo per test qualitativi):
+#   massa pavimento M:  dM/dt = 0.5·(35−M)·pav_on − 0.4·(M−T)
+#   ambiente T:         dT/dt = 0.6·(M−T) + 1.5·pdc_on − 0.08·(T−Text)   [°C/h]
+# Il pavimento ha inerzia (riscalda la massa, poi l'ambiente); la pompa di
+# calore agisce subito. Parametri inventati: NON rappresentano la casa reale.
+# =============================================================================
+
+input_boolean:
+  sim_ambiente_simulato:
+    name: "[SIM] Ambiente simulato attivo"
+    icon: mdi:test-tube
+    initial: true
+  # stati interni dei dispositivi simulati
+  sim_luce_giorno_stato: {name: "[SIM] stato luce giorno"}
+  sim_luce_cucina_stato: {name: "[SIM] stato luce cucina"}
+  sim_luce_ingresso_stato: {name: "[SIM] stato luce ingresso"}
+  sim_luce_mansarda_stato: {name: "[SIM] stato luce mansarda"}
+  sim_luce_notte_stato: {name: "[SIM] stato luce notturna"}
+  sim_presa_tv_stato: {name: "[SIM] stato presa TV"}
+  sim_frigorifero_stato: {name: "[SIM] stato frigorifero"}
+  sim_movimento_ingresso_stato: {name: "[SIM] movimento ingresso", icon: mdi:motion-sensor}
+  sim_finestra_mansarda_stato: {name: "[SIM] finestra mansarda aperta", icon: mdi:window-open}
+  sim_pav_inferiore_valvola: {name: "[SIM] richiesta calore pavimento inferiore"}
+  sim_pav_mansarda_valvola: {name: "[SIM] richiesta calore pavimento mansarda"}
+  sim_pdc_inferiore_compressore: {name: "[SIM] compressore Daikin inferiore"}
+  sim_pdc_mansarda_compressore: {name: "[SIM] compressore Daikin mansarda"}
+  # iniezione guasti
+  sim_guasto_sensore_inferiore: {name: "[SIM] guasto sensore temperatura inferiore", icon: mdi:alert}
+  sim_guasto_sensore_mansarda: {name: "[SIM] guasto sensore temperatura mansarda", icon: mdi:alert}
+  sim_fisica_attiva: {name: "[SIM] modello fisico attivo", icon: mdi:atom, initial: true}
+
+input_number:
+  sim_t_inferiore: {name: "[SIM] T ambiente inferiore", min: -10, max: 40, step: 0.01, unit_of_measurement: "°C", mode: box}
+  sim_t_mansarda: {name: "[SIM] T ambiente mansarda", min: -10, max: 40, step: 0.01, unit_of_measurement: "°C", mode: box}
+  sim_m_inferiore: {name: "[SIM] T massa pavimento inferiore", min: -10, max: 50, step: 0.01, unit_of_measurement: "°C", mode: box}
+  sim_m_mansarda: {name: "[SIM] T massa pavimento mansarda", min: -10, max: 50, step: 0.01, unit_of_measurement: "°C", mode: box}
+  sim_t_esterna: {name: "[SIM] T esterna", min: -20, max: 45, step: 0.5, unit_of_measurement: "°C", mode: slider}
+  sim_umidita: {name: "[SIM] Umidità", min: 20, max: 90, step: 1, unit_of_measurement: "%", mode: slider}
+  sim_velocita: {name: "[SIM] Velocità simulazione", min: 1, max: 60, step: 1, unit_of_measurement: "x", mode: slider}
+  # energia
+  sim_fv_picco: {name: "[SIM] Potenza di picco FV", min: 0, max: 8000, step: 100, unit_of_measurement: W, mode: box}
+  sim_nuvolosita: {name: "[SIM] Nuvolosità", min: 0, max: 100, step: 5, unit_of_measurement: "%", mode: slider}
+  sim_casa_base: {name: "[SIM] Consumo di base casa", min: 0, max: 5000, step: 50, unit_of_measurement: W, mode: box}
+  sim_batt_capacita: {name: "[SIM] Capacità batteria", min: 0, max: 20, step: 0.5, unit_of_measurement: kWh, mode: box}
+  sim_batt_soc_val: {name: "[SIM] SoC batteria", min: 0, max: 100, step: 0.01, unit_of_measurement: "%", mode: box}
+  sim_fv_val: {name: "[SIM] valore FV", min: 0, max: 10000, step: 1, unit_of_measurement: W, mode: box}
+  sim_casa_val: {name: "[SIM] valore consumo", min: 0, max: 20000, step: 1, unit_of_measurement: W, mode: box}
+  sim_batt_val: {name: "[SIM] valore batteria netta", min: -10000, max: 10000, step: 1, unit_of_measurement: W, mode: box}
+  sim_rete_val: {name: "[SIM] valore rete netta", min: -20000, max: 20000, step: 1, unit_of_measurement: W, mode: box}
+
+# Carica l'integrazione device_tracker (servizio device_tracker.see) usata
+# per simulare gli spostamenti dei telefoni.
+device_tracker:
+
+# Persone simulate (le persone reali si creano dall'interfaccia).
+person:
+  - name: "[SIM] Persona 1"
+    id: sim_persona_1
+    device_trackers: [device_tracker.sim_telefono_1]
+  - name: "[SIM] Persona 2"
+    id: sim_persona_2
+    device_trackers: [device_tracker.sim_telefono_2]
+
+template:
+  - sensor:
+      - name: "[SIM] Temperatura piano inferiore"
+        unique_id: sim_temperatura_inferiore
+        default_entity_id: sensor.sim_temperatura_inferiore
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: "{{ states('input_number.sim_t_inferiore') | float | round(1) }}"
+        availability: "{{ is_state('input_boolean.sim_guasto_sensore_inferiore', 'off') }}"
+      - name: "[SIM] Temperatura mansarda"
+        unique_id: sim_temperatura_mansarda
+        default_entity_id: sensor.sim_temperatura_mansarda
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: "{{ states('input_number.sim_t_mansarda') | float | round(1) }}"
+        availability: "{{ is_state('input_boolean.sim_guasto_sensore_mansarda', 'off') }}"
+      - name: "[SIM] Temperatura esterna"
+        unique_id: sim_temperatura_esterna
+        default_entity_id: sensor.sim_temperatura_esterna
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: "{{ states('input_number.sim_t_esterna') | float }}"
+      - name: "[SIM] Umidità piano inferiore"
+        unique_id: sim_umidita_inferiore
+        default_entity_id: sensor.sim_umidita_inferiore
+        device_class: humidity
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: "{{ states('input_number.sim_umidita') | float }}"
+      # --- energia ---
+      - name: "[SIM] FV potenza"
+        unique_id: sim_fv_potenza
+        default_entity_id: sensor.sim_fv_potenza
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ states('input_number.sim_fv_val') | float(0) | round(0) }}"
+      - name: "[SIM] Consumo casa"
+        unique_id: sim_casa_potenza
+        default_entity_id: sensor.sim_casa_potenza
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ states('input_number.sim_casa_val') | float(0) | round(0) }}"
+      - name: "[SIM] Rete potenza netta"
+        unique_id: sim_rete_potenza_netta
+        default_entity_id: sensor.sim_rete_potenza_netta
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ states('input_number.sim_rete_val') | float(0) | round(0) }}"
+      - name: "[SIM] Rete prelievo potenza"
+        unique_id: sim_rete_prelievo_potenza
+        default_entity_id: sensor.sim_rete_prelievo_potenza
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ [states('input_number.sim_rete_val') | float(0), 0] | max | round(0) }}"
+      - name: "[SIM] Rete immissione potenza"
+        unique_id: sim_rete_immissione_potenza
+        default_entity_id: sensor.sim_rete_immissione_potenza
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ [-(states('input_number.sim_rete_val') | float(0)), 0] | max | round(0) }}"
+      - name: "[SIM] Batteria potenza netta"
+        unique_id: sim_batteria_potenza_netta
+        default_entity_id: sensor.sim_batteria_potenza_netta
+        device_class: power
+        unit_of_measurement: W
+        state_class: measurement
+        state: "{{ states('input_number.sim_batt_val') | float(0) | round(0) }}"
+      - name: "[SIM] Batteria SoC"
+        unique_id: sim_batteria_soc
+        default_entity_id: sensor.sim_batteria_soc
+        device_class: battery
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: "{{ states('input_number.sim_batt_soc_val') | float(0) | round(1) }}"
+
+  - binary_sensor:
+      - name: "[SIM] Movimento ingresso"
+        unique_id: sim_movimento_ingresso
+        default_entity_id: binary_sensor.sim_movimento_ingresso
+        device_class: motion
+        state: "{{ is_state('input_boolean.sim_movimento_ingresso_stato', 'on') }}"
+      - name: "[SIM] Finestra mansarda"
+        unique_id: sim_finestra_mansarda
+        default_entity_id: binary_sensor.sim_finestra_mansarda
+        device_class: window
+        state: "{{ is_state('input_boolean.sim_finestra_mansarda_stato', 'on') }}"
+
+  - light:
+      - name: "[SIM] Luce zona giorno"
+        unique_id: sim_luce_giorno
+        default_entity_id: light.sim_luce_giorno
+        state: "{{ is_state('input_boolean.sim_luce_giorno_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_luce_giorno_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_luce_giorno_stato}}
+      - name: "[SIM] Luce cucina"
+        unique_id: sim_luce_cucina
+        default_entity_id: light.sim_luce_cucina
+        state: "{{ is_state('input_boolean.sim_luce_cucina_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_luce_cucina_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_luce_cucina_stato}}
+      - name: "[SIM] Luce ingresso"
+        unique_id: sim_luce_ingresso
+        default_entity_id: light.sim_luce_ingresso
+        state: "{{ is_state('input_boolean.sim_luce_ingresso_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_luce_ingresso_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_luce_ingresso_stato}}
+      - name: "[SIM] Luce mansarda"
+        unique_id: sim_luce_mansarda
+        default_entity_id: light.sim_luce_mansarda
+        state: "{{ is_state('input_boolean.sim_luce_mansarda_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_luce_mansarda_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_luce_mansarda_stato}}
+      - name: "[SIM] Luce notturna mansarda"
+        unique_id: sim_luce_notte
+        default_entity_id: light.sim_luce_notte
+        state: "{{ is_state('input_boolean.sim_luce_notte_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_luce_notte_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_luce_notte_stato}}
+
+  - switch:
+      - name: "[SIM] Presa TV"
+        unique_id: sim_presa_tv
+        default_entity_id: switch.sim_presa_tv
+        state: "{{ is_state('input_boolean.sim_presa_tv_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_presa_tv_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_presa_tv_stato}}
+      - name: "[SIM] Presa frigorifero"
+        unique_id: sim_frigorifero
+        default_entity_id: switch.sim_frigorifero
+        state: "{{ is_state('input_boolean.sim_frigorifero_stato', 'on') }}"
+        turn_on: {action: input_boolean.turn_on, target: {entity_id: input_boolean.sim_frigorifero_stato}}
+        turn_off: {action: input_boolean.turn_off, target: {entity_id: input_boolean.sim_frigorifero_stato}}
+
+# Dispositivi clima simulati: generic_thermostat (integrazione nativa).
+# Limite: solo riscaldamento (il raffrescamento estivo non è simulato).
+climate:
+  - platform: generic_thermostat
+    name: "[SIM] Daikin inferiore"
+    unique_id: sim_daikin_inferiore
+    heater: input_boolean.sim_pdc_inferiore_compressore
+    target_sensor: sensor.sim_temperatura_inferiore
+    min_temp: 10
+    max_temp: 30
+    cold_tolerance: 0.3
+    hot_tolerance: 0.3
+    min_cycle_duration: {minutes: 3}
+    initial_hvac_mode: "off"
+  - platform: generic_thermostat
+    name: "[SIM] Daikin mansarda"
+    unique_id: sim_daikin_mansarda
+    heater: input_boolean.sim_pdc_mansarda_compressore
+    target_sensor: sensor.sim_temperatura_mansarda
+    min_temp: 10
+    max_temp: 30
+    cold_tolerance: 0.3
+    hot_tolerance: 0.3
+    min_cycle_duration: {minutes: 3}
+    initial_hvac_mode: "off"
+  - platform: generic_thermostat
+    name: "[SIM] Termostato inferiore"
+    unique_id: sim_termostato_inferiore
+    heater: input_boolean.sim_pav_inferiore_valvola
+    target_sensor: sensor.sim_temperatura_inferiore
+    min_temp: 5
+    max_temp: 28
+    cold_tolerance: 0.2
+    hot_tolerance: 0.2
+    initial_hvac_mode: heat
+    target_temp: 15
+  - platform: generic_thermostat
+    name: "[SIM] Termostato mansarda"
+    unique_id: sim_termostato_mansarda
+    heater: input_boolean.sim_pav_mansarda_valvola
+    target_sensor: sensor.sim_temperatura_mansarda
+    min_temp: 5
+    max_temp: 28
+    cold_tolerance: 0.2
+    hot_tolerance: 0.2
+    initial_hvac_mode: heat
+    target_temp: 15
+
+sensor:
+  - platform: integration
+    source: sensor.sim_fv_potenza
+    name: sim_fv_energia
+    unique_id: sim_fv_energia
+    unit_prefix: k
+    unit_time: h
+    method: left
+    round: 3
+    max_sub_interval: {minutes: 2}
+  - platform: integration
+    source: sensor.sim_rete_prelievo_potenza
+    name: sim_rete_prelievo_energia
+    unique_id: sim_rete_prelievo_energia
+    unit_prefix: k
+    unit_time: h
+    method: left
+    round: 3
+    max_sub_interval: {minutes: 2}
+  - platform: integration
+    source: sensor.sim_rete_immissione_potenza
+    name: sim_rete_immissione_energia
+    unique_id: sim_rete_immissione_energia
+    unit_prefix: k
+    unit_time: h
+    method: left
+    round: 3
+    max_sub_interval: {minutes: 2}
+
+homeassistant:
+  customize:
+    sensor.sim_fv_energia: {friendly_name: "[SIM] FV energia"}
+    sensor.sim_rete_prelievo_energia: {friendly_name: "[SIM] Rete energia prelevata"}
+    sensor.sim_rete_immissione_energia: {friendly_name: "[SIM] Rete energia immessa"}
+
+script:
+  sim_persona_entra:
+    alias: "[SIM] Persona entra in casa"
+    icon: mdi:home-import-outline
+    fields:
+      n: {description: "1 o 2", default: 1, selector: {number: {min: 1, max: 2}}}
+    sequence:
+      - action: device_tracker.see
+        data:
+          dev_id: "sim_telefono_{{ n | int }}"
+          location_name: home
+          source_type: gps
+  sim_persona_esce:
+    alias: "[SIM] Persona esce di casa"
+    icon: mdi:home-export-outline
+    fields:
+      n: {description: "1 o 2", default: 1, selector: {number: {min: 1, max: 2}}}
+    sequence:
+      - action: device_tracker.see
+        data:
+          dev_id: "sim_telefono_{{ n | int }}"
+          location_name: not_home
+          source_type: gps
+  sim_reset:
+    alias: "[SIM] Ripristina condizioni iniziali"
+    icon: mdi:restore
+    sequence:
+      - repeat:
+          for_each:
+            - {e: input_number.sim_t_inferiore, v: 19}
+            - {e: input_number.sim_t_mansarda, v: 18.5}
+            - {e: input_number.sim_m_inferiore, v: 19}
+            - {e: input_number.sim_m_mansarda, v: 18.5}
+            - {e: input_number.sim_t_esterna, v: 6}
+            - {e: input_number.sim_umidita, v: 50}
+            - {e: input_number.sim_velocita, v: 1}
+            - {e: input_number.sim_fv_picco, v: 6000}
+            - {e: input_number.sim_nuvolosita, v: 20}
+            - {e: input_number.sim_casa_base, v: 450}
+            - {e: input_number.sim_batt_capacita, v: 12}
+            - {e: input_number.sim_batt_soc_val, v: 50}
+            - {e: input_number.sim_fv_val, v: 0}
+            - {e: input_number.sim_casa_val, v: 450}
+            - {e: input_number.sim_batt_val, v: 0}
+            - {e: input_number.sim_rete_val, v: 450}
+          sequence:
+            - action: input_number.set_value
+              target: {entity_id: "{{ repeat.item.e }}"}
+              data: {value: "{{ repeat.item.v }}"}
+      - action: input_boolean.turn_off
+        target:
+          entity_id:
+            - input_boolean.sim_guasto_sensore_inferiore
+            - input_boolean.sim_guasto_sensore_mansarda
+            - input_boolean.sim_finestra_mansarda_stato
+            - input_boolean.sim_movimento_ingresso_stato
+      - action: input_boolean.turn_on
+        target: {entity_id: input_boolean.sim_frigorifero_stato}
+
+automation:
+  - id: sim_inizializza
+    alias: "[SIM] Inizializza ambiente simulato"
+    triggers:
+      - trigger: homeassistant
+        event: start
+    conditions:
+      # solo al primo avvio (valori ancora al minimo)
+      - condition: numeric_state
+        entity_id: input_number.sim_t_inferiore
+        below: -9
+    actions:
+      - action: script.sim_reset
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_en_batt_capacita}
+        data: {value: 12}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_en_prezzo_acquisto}
+        data: {value: 0.30}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_en_prezzo_vendita}
+        data: {value: 0.10}
+      - action: script.sim_persona_entra
+        data: {n: 1}
+      - action: script.sim_persona_entra
+        data: {n: 2}
+
+  - id: sim_fisica
+    alias: "[SIM] Modello fisico (ogni minuto)"
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: time_pattern
+        minutes: "/1"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.sim_fisica_attiva
+        state: "on"
+    actions:
+      - variables:
+          dt: "{{ states('input_number.sim_velocita') | float(1) / 60 }}"
+          te: "{{ states('input_number.sim_t_esterna') | float(5) }}"
+      - repeat:
+          for_each: [inferiore, mansarda]
+          sequence:
+            - variables:
+                z: "{{ repeat.item }}"
+                t: "{{ states('input_number.sim_t_' ~ z) | float(19) }}"
+                m: "{{ states('input_number.sim_m_' ~ z) | float(19) }}"
+                pav: "{{ 1 if is_state('input_boolean.sim_pav_' ~ z ~ '_valvola', 'on') else 0 }}"
+                pdc: "{{ 1 if is_state('input_boolean.sim_pdc_' ~ z ~ '_compressore', 'on') else 0 }}"
+                m2: "{{ m + dt * (0.5 * (35 - m) * pav - 0.4 * (m - t)) }}"
+                t2: "{{ t + dt * (0.6 * (m - t) + 1.5 * pdc - 0.08 * (t - te)) }}"
+            - action: input_number.set_value
+              target: {entity_id: "input_number.sim_m_{{ z }}"}
+              data: {value: "{{ [[m2, -10] | max, 50] | min | round(2) }}"}
+            - action: input_number.set_value
+              target: {entity_id: "input_number.sim_t_{{ z }}"}
+              data: {value: "{{ [[t2, -10] | max, 40] | min | round(2) }}"}
+      # --- energia ---
+      - variables:
+          elev: "{{ state_attr('sun.sun', 'elevation') | float(0) }}"
+          fv: >
+            {{ (states('input_number.sim_fv_picco') | float(0) * ([elev, 0] | max * pi / 180) | sin
+                * (1 - 0.8 * states('input_number.sim_nuvolosita') | float(0) / 100)) | round(0) }}
+          casa: >
+            {{ (states('input_number.sim_casa_base') | float(0)
+                + 1200 * (states.input_boolean | selectattr('entity_id', 'match', 'input_boolean\.sim_pdc_.*_compressore') | selectattr('state', 'eq', 'on') | list | count)
+                + 80 * (states.light | selectattr('entity_id', 'match', 'light\.sim_') | selectattr('state', 'eq', 'on') | list | count)
+                + (120 if is_state('input_boolean.sim_presa_tv_stato', 'on') else 0)
+                + (90 if is_state('input_boolean.sim_frigorifero_stato', 'on') else 0)) | round(0) }}
+          soc: "{{ states('input_number.sim_batt_soc_val') | float(50) }}"
+          cap: "{{ states('input_number.sim_batt_capacita') | float(10) }}"
+          surplus: "{{ fv - casa }}"
+          batt: >
+            {% if surplus > 0 and soc < 100 %}{{ -([surplus, 3000] | min) }}
+            {% elif surplus < 0 and soc > 10 %}{{ [-surplus, 3000] | min }}
+            {% else %}0{% endif %}
+          rete: "{{ casa - fv - batt }}"
+          soc2: "{{ soc - (batt * dt / (cap * 1000) * 100 if cap > 0 else 0) }}"
+      - action: input_number.set_value
+        target: {entity_id: input_number.sim_fv_val}
+        data: {value: "{{ [fv, 0] | max }}"}
+      - action: input_number.set_value
+        target: {entity_id: input_number.sim_casa_val}
+        data: {value: "{{ casa }}"}
+      - action: input_number.set_value
+        target: {entity_id: input_number.sim_batt_val}
+        data: {value: "{{ batt | round(0) }}"}
+      - action: input_number.set_value
+        target: {entity_id: input_number.sim_rete_val}
+        data: {value: "{{ rete | round(0) }}"}
+      - action: input_number.set_value
+        target: {entity_id: input_number.sim_batt_soc_val}
+        data: {value: "{{ [[soc2, 0] | max, 100] | min | round(2) }}"}

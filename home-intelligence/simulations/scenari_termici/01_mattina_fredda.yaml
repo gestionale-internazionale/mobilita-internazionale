@@ -1,0 +1,24 @@
+# Mattina invernale fredda: casa a 17 °C, programma comfort dalle 6:30.
+# Atteso: pavimento come base, pompa di calore solo come integrazione iniziale,
+# nessuna commutazione frequente, temperatura vicina al setpoint a regime.
+nome: Mattina fredda invernale
+stagione: inverno
+durata_ore: 24
+passo_min: 5
+fonte: auto
+iniziale: {t: 17.0, m: 17.5, esterna: 2.0}
+setpoint:
+  - {da_ora: 0, valore: 18.5}
+  - {da_ora: 6.5, valore: 20.5}
+  - {da_ora: 22.5, valore: 18.5}
+eventi:
+  - {ora: 12, esterna: 8.0}
+  - {ora: 18, esterna: 0.0}
+# Le soglie sono proprietà qualitative (max ~1 commutazione/ora, errore entro
+# 1.2 °C con il modello fisico inventato): la taratura reale richiede i dati
+# dell'impianto (parametro hi_clima_inerzia_ore).
+attese:
+  max_commutazioni_pdc: 10
+  max_commutazioni_pav: 16
+  errore_max_dopo_ore: {ore: 8, fino_a: 22.5, max: 1.2}
+  pdc_usata: true

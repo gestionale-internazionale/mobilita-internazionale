@@ -1,0 +1,54 @@
+# =============================================================================
+# HOME INTELLIGENCE – configuration.yaml
+# =============================================================================
+# Configurazione principale. La logica è organizzata in "packages":
+#   packages/hi_*.yaml          moduli scritti a mano
+#   packages/generated/*.yaml   generati da inventory/house.yaml (NON modificare)
+#   packages/zz_simulazione/    SOLO sviluppo: copiato da scripts/dev-*.sh,
+#                               escluso da git e MAI copiato su Green
+#
+# Posizione, fuso orario, unità e nome della casa si configurano
+# dall'interfaccia (Impostazioni → Sistema → Generale) e restano in .storage:
+# nessuna coordinata personale viene salvata nel repository.
+# =============================================================================
+
+homeassistant:
+  packages: !include_dir_named packages
+  # Elementi personalizzabili via UI per entità restano in .storage.
+
+# Integrazioni di base consigliate (frontend, mobile_app, person, zone, sun,
+# history, logbook, energy, backup, …).
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes
+
+# Dashboard YAML versionate nel repository (le dashboard UI restano disponibili).
+lovelace:
+  dashboards:
+    home-intelligence:
+      mode: yaml
+      filename: dashboards/home_intelligence.yaml
+      title: Home Intelligence
+      icon: mdi:home-analytics
+      show_in_sidebar: true
+      require_admin: false
+
+# Necessario per rilevare gli errori delle automazioni (modulo Diagnostica).
+system_log:
+  fire_event: true
+
+logger:
+  default: warning
+  logs:
+    homeassistant.components.automation: info
+    homeassistant.components.script: info
+
+recorder:
+  purge_keep_days: 30
+
+# File gestiti dall'editor UI: le automazioni create dall'interfaccia
+# convivono con quelle dei packages.
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

@@ -1,0 +1,346 @@
+# =============================================================================
+# HOME INTELLIGENCE – Registro dispositivi
+# =============================================================================
+# Ogni voce descrive un dispositivo fisico (o virtuale) e lo collega a:
+#   - un ambiente (area di inventory/house.yaml)
+#   - una o più funzioni (etichette "hi_*")
+#   - le entità Home Assistant che lo rappresentano
+#
+# stato:
+#   reale           dispositivo disponibile, integrato e controllabile
+#   non_disponibile previsto ma non ancora installato/identificato/integrato
+#   simulazione     entità virtuale, SOLO per l'ambiente di sviluppo
+#
+# Procedura per collegare un dispositivo reale:
+#   1. integra il dispositivo in HA (Impostazioni → Dispositivi e servizi)
+#   2. copia gli entity_id in "entita" e porta "stato" a reale
+#   3. python3 scripts/hi_tool.py validate
+#   4. python3 scripts/hi_tool.py sync --apply   (assegna area + etichette)
+#   5. python3 scripts/hi_tool.py docs           (aggiorna il registro in docs/)
+#
+# Nessun riferimento a entity_id reali compare nelle automazioni: basta questo
+# file (o l'assegnazione di etichette/aree dall'interfaccia di HA).
+# =============================================================================
+
+dispositivi:
+
+  # ---------------------------------------------------------------------------
+  # CLIMATIZZAZIONE – dispositivi reali previsti
+  # ---------------------------------------------------------------------------
+  - id: daikin_inferiore
+    nome: Pompa di calore piano inferiore
+    marca: Daikin
+    modello: null                 # DA FORNIRE (unità interna + esterna + adattatore Wi-Fi)
+    tipo: pompa_di_calore
+    integrazione: da_verificare   # daikin_onecta (cloud) | daikin (locale, BRP069/BRP072/SKYFi)
+    area: inferiore_giorno
+    stato: non_disponibile
+    entita: []                    # es. climate.daikin_soggiorno
+    etichette: [hi_pdc_inferiore, hi_monitorato]
+    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, ventola]
+    comando: [accensione, modalita, setpoint, ventola]
+    note: >-
+      Compatibilità da verificare sul modello reale. Le funzioni effettivamente
+      esposte (temperatura esterna, consumi, swing, modalità speciali) dipendono
+      da modello e adattatore. Vedi docs/analisi-tecnica.md §Daikin.
+
+  - id: daikin_mansarda
+    nome: Pompa di calore mansarda
+    marca: Daikin
+    modello: null
+    tipo: pompa_di_calore
+    integrazione: da_verificare
+    area: mansarda_principale
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_pdc_mansarda, hi_monitorato]
+    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, ventola]
+    comando: [accensione, modalita, setpoint, ventola]
+    note: Vedi daikin_inferiore.
+
+  - id: termostato_inferiore
+    nome: Termostato pavimento piano inferiore
+    marca: null                   # acquistato, modello DA FORNIRE
+    modello: null
+    tipo: termostato
+    integrazione: da_verificare   # preferibile Matter/Zigbee/locale
+    area: inferiore_giorno
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_termostato_inferiore, hi_monitorato]
+    monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
+    comando: [setpoint, modalita]
+    note: >-
+      Il supervisore NON comanda valvole, collettori o caldaie: agisce solo sul
+      setpoint del termostato, dopo verifica dell'architettura dell'impianto.
+      Il pavimento non viene MAI usato in raffrescamento.
+
+  - id: termostato_mansarda
+    nome: Termostato pavimento mansarda
+    marca: null
+    modello: null
+    tipo: termostato
+    integrazione: da_verificare
+    area: mansarda_principale
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_termostato_mansarda, hi_monitorato]
+    monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
+    comando: [setpoint, modalita]
+    note: Vedi termostato_inferiore.
+
+  # ---------------------------------------------------------------------------
+  # ENERGIA – impianto previsto (marca inverter non nota)
+  # ---------------------------------------------------------------------------
+  - id: inverter_fv
+    nome: Inverter fotovoltaico (~6 kWp)
+    marca: null
+    modello: null
+    tipo: inverter
+    integrazione: da_verificare   # preferire integrazione locale (Modbus/API locale)
+    area: locale_tecnico
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_en_pv_potenza, hi_en_pv_energia, hi_monitorato]
+    monitoraggio: [potenza_fv, energia_fv]
+    comando: []
+    note: Assegnare a ogni entità SOLO l'etichetta del ruolo corrispondente (vedi docs/energia.md).
+
+  - id: batteria
+    nome: Sistema di accumulo (10–15 kWh)
+    marca: null
+    modello: null
+    tipo: batteria
+    integrazione: da_verificare
+    area: locale_tecnico
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_en_batt_soc, hi_en_batt_carica_potenza, hi_en_batt_scarica_potenza,
+                hi_en_batt_energia_carica, hi_en_batt_energia_scarica]
+    monitoraggio: [soc, potenza_carica, potenza_scarica, energia]
+    comando: []
+    note: Nessun comando previsto nella prima versione.
+
+  - id: contatore_scambio
+    nome: Misura di scambio con la rete
+    marca: null
+    modello: null
+    tipo: contatore
+    integrazione: da_verificare   # dall'inverter o da un misuratore dedicato
+    area: locale_tecnico
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_en_rete_prelievo_potenza, hi_en_rete_immissione_potenza,
+                hi_en_rete_prelievo_energia, hi_en_rete_immissione_energia]
+    monitoraggio: [prelievo, immissione]
+    comando: []
+    note: null
+
+  # ---------------------------------------------------------------------------
+  # INTERRUTTORI E ALTRI DISPOSITIVI ESISTENTI – da censire
+  # ---------------------------------------------------------------------------
+  - id: interruttori_smart
+    nome: Interruttori smart esistenti (gruppo da censire)
+    marca: null                   # DA FORNIRE
+    modello: null
+    tipo: interruttore
+    integrazione: da_verificare   # Matter / integrazione produttore / bridge
+    area: null
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: >-
+      Censire un interruttore per voce quando marca/modello saranno noti,
+      indicando l'area e le etichette (hi_luce, hi_luce_ingresso, …).
+
+  - id: telefoni_companion
+    nome: Smartphone con Companion App
+    marca: null
+    modello: null
+    tipo: tracker
+    integrazione: mobile_app
+    area: null
+    stato: non_disponibile
+    entita: []                    # device_tracker.* creati dall'app
+    etichette: []
+    monitoraggio: [posizione, batteria]
+    comando: [notifiche]
+    note: Associare ogni device_tracker alla rispettiva persona da Impostazioni → Persone.
+
+  # ---------------------------------------------------------------------------
+  # SIMULAZIONE – entità virtuali (simulations/sim_package.yaml)
+  # Presenti solo nell'ambiente di sviluppo. Nome con prefisso "[SIM]" e
+  # entity_id con prefisso "sim_".
+  # ---------------------------------------------------------------------------
+  - id: sim_sensori_clima
+    nome: "[SIM] Sensori temperatura/umidità"
+    tipo: sensore
+    integrazione: template
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [sensor.sim_temperatura_inferiore]
+    etichette: [hi_temp_inferiore, hi_simulazione]
+  - id: sim_umidita_inferiore
+    nome: "[SIM] Umidità piano inferiore"
+    tipo: sensore
+    integrazione: template
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [sensor.sim_umidita_inferiore]
+    etichette: [hi_umidita_inferiore, hi_simulazione]
+  - id: sim_sensore_mansarda
+    nome: "[SIM] Temperatura mansarda"
+    tipo: sensore
+    integrazione: template
+    area: mansarda_principale
+    stato: simulazione
+    entita: [sensor.sim_temperatura_mansarda]
+    etichette: [hi_temp_mansarda, hi_simulazione]
+  - id: sim_temp_esterna
+    nome: "[SIM] Temperatura esterna"
+    tipo: sensore
+    integrazione: template
+    area: esterno
+    stato: simulazione
+    entita: [sensor.sim_temperatura_esterna]
+    etichette: [hi_temp_esterna, hi_simulazione]
+  - id: sim_daikin_inferiore
+    nome: "[SIM] Daikin piano inferiore"
+    tipo: pompa_di_calore
+    integrazione: generic_thermostat
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [climate.sim_daikin_inferiore]
+    etichette: [hi_pdc_inferiore, hi_monitorato, hi_simulazione]
+  - id: sim_daikin_mansarda
+    nome: "[SIM] Daikin mansarda"
+    tipo: pompa_di_calore
+    integrazione: generic_thermostat
+    area: mansarda_principale
+    stato: simulazione
+    entita: [climate.sim_daikin_mansarda]
+    etichette: [hi_pdc_mansarda, hi_monitorato, hi_simulazione]
+  - id: sim_termostato_inferiore
+    nome: "[SIM] Termostato pavimento inferiore"
+    tipo: termostato
+    integrazione: generic_thermostat
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [climate.sim_termostato_inferiore]
+    etichette: [hi_termostato_inferiore, hi_monitorato, hi_simulazione]
+  - id: sim_termostato_mansarda
+    nome: "[SIM] Termostato pavimento mansarda"
+    tipo: termostato
+    integrazione: generic_thermostat
+    area: mansarda_principale
+    stato: simulazione
+    entita: [climate.sim_termostato_mansarda]
+    etichette: [hi_termostato_mansarda, hi_monitorato, hi_simulazione]
+  - id: sim_luce_giorno
+    nome: "[SIM] Luce zona giorno"
+    tipo: luce
+    integrazione: template
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [light.sim_luce_giorno]
+    etichette: [hi_luce, hi_simulazione]
+  - id: sim_luce_cucina
+    nome: "[SIM] Luce cucina"
+    tipo: luce
+    integrazione: template
+    area: inferiore_cucina
+    stato: simulazione
+    entita: [light.sim_luce_cucina]
+    etichette: [hi_luce, hi_simulazione]
+  - id: sim_luce_ingresso
+    nome: "[SIM] Luce ingresso"
+    tipo: luce
+    integrazione: template
+    area: inferiore_ingresso
+    stato: simulazione
+    entita: [light.sim_luce_ingresso]
+    etichette: [hi_luce, hi_luce_ingresso, hi_simulazione]
+  - id: sim_luce_mansarda
+    nome: "[SIM] Luce mansarda"
+    tipo: luce
+    integrazione: template
+    area: mansarda_principale
+    stato: simulazione
+    entita: [light.sim_luce_mansarda]
+    etichette: [hi_luce, hi_simulazione]
+  - id: sim_luce_notte
+    nome: "[SIM] Luce notturna mansarda"
+    tipo: luce
+    integrazione: template
+    area: mansarda_secondaria
+    stato: simulazione
+    entita: [light.sim_luce_notte]
+    etichette: [hi_luce, hi_luce_notturna, hi_simulazione]
+  - id: sim_presa_tv
+    nome: "[SIM] Presa TV (non essenziale)"
+    tipo: presa
+    integrazione: template
+    area: inferiore_giorno
+    stato: simulazione
+    entita: [switch.sim_presa_tv]
+    etichette: [hi_carico_non_essenziale, hi_simulazione]
+  - id: sim_frigorifero
+    nome: "[SIM] Presa frigorifero (critica)"
+    tipo: presa
+    integrazione: template
+    area: inferiore_cucina
+    stato: simulazione
+    entita: [switch.sim_frigorifero]
+    etichette: [hi_critico, hi_monitorato, hi_simulazione]
+  - id: sim_movimento_ingresso
+    nome: "[SIM] Sensore movimento ingresso"
+    tipo: sensore_movimento
+    integrazione: template
+    area: inferiore_ingresso
+    stato: simulazione
+    entita: [binary_sensor.sim_movimento_ingresso]
+    etichette: [hi_presenza_supplementare, hi_simulazione]
+  - id: sim_finestra_mansarda
+    nome: "[SIM] Finestra mansarda"
+    tipo: sensore_apertura
+    integrazione: template
+    area: mansarda_principale
+    stato: simulazione
+    entita: [binary_sensor.sim_finestra_mansarda]
+    etichette: [hi_finestra_mansarda, hi_simulazione]
+  - id: sim_impianto_energia
+    nome: "[SIM] Fotovoltaico, batteria e scambio"
+    tipo: inverter
+    integrazione: template
+    area: locale_tecnico
+    stato: simulazione
+    entita:
+      - sensor.sim_fv_potenza
+      - sensor.sim_fv_energia
+      - sensor.sim_rete_potenza_netta
+      - sensor.sim_rete_prelievo_energia
+      - sensor.sim_rete_immissione_energia
+      - sensor.sim_casa_potenza
+      - sensor.sim_batteria_soc
+      - sensor.sim_batteria_potenza_netta
+    # Le etichette per entità sono definite in "ruoli" (una per entità).
+    etichette: [hi_simulazione]
+    ruoli:
+      sensor.sim_fv_potenza: [hi_en_pv_potenza]
+      sensor.sim_fv_energia: [hi_en_pv_energia]
+      sensor.sim_rete_potenza_netta: [hi_en_rete_potenza_netta]
+      sensor.sim_rete_prelievo_energia: [hi_en_rete_prelievo_energia]
+      sensor.sim_rete_immissione_energia: [hi_en_rete_immissione_energia]
+      sensor.sim_casa_potenza: [hi_en_casa_potenza]
+      sensor.sim_batteria_soc: [hi_en_batt_soc]
+      sensor.sim_batteria_potenza_netta: [hi_en_batt_potenza_netta]
+  - id: sim_telefoni
+    nome: "[SIM] Smartphone persone simulate"
+    tipo: tracker
+    integrazione: device_tracker.see
+    area: null
+    stato: simulazione
+    entita: [device_tracker.sim_telefono_1, device_tracker.sim_telefono_2]
+    etichette: [hi_simulazione]

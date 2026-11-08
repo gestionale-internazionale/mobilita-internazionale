@@ -1,0 +1,25 @@
+# Home Assistant Container per lo SVILUPPO (non per la produzione: in
+# produzione si usa Home Assistant OS su Green).
+# Avvio: scripts/dev-up.sh docker
+services:
+  homeassistant:
+    container_name: hi-dev-homeassistant
+    image: ghcr.io/home-assistant/home-assistant:${HA_VERSION:-2026.2.3}
+    restart: unless-stopped
+    # Su Linux la rete host permette la scoperta dei dispositivi in LAN
+    # (mDNS/SSDP). Su macOS/Windows Docker Desktop la rete host è limitata:
+    # in quel caso usare la VM con Home Assistant OS (vedi docs/ambiente-sviluppo.md).
+    network_mode: host
+    environment:
+      TZ: Europe/Rome
+    volumes:
+      - ./dev/runtime:/config
+      - ./homeassistant/configuration.yaml:/config/configuration.yaml
+      - ./homeassistant/automations.yaml:/config/automations.yaml
+      - ./homeassistant/scripts.yaml:/config/scripts.yaml
+      - ./homeassistant/scenes.yaml:/config/scenes.yaml
+      - ./homeassistant/packages:/config/packages
+      - ./homeassistant/dashboards:/config/dashboards
+      - ./homeassistant/themes:/config/themes
+      - ./homeassistant/www:/config/www
+      - ./homeassistant/custom_templates:/config/custom_templates

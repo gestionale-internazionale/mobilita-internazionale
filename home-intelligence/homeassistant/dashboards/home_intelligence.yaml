@@ -1,0 +1,19 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+# Dashboard principale Home Intelligence (modalità YAML).
+# Viste scritte a mano: dashboards/views/ · viste generate: dashboards/generated/
+
+title: Home Intelligence
+views:
+  - !include views/home.yaml
+  - !include generated/vista_casa.yaml
+  - !include generated/vista_piano_piano_inferiore.yaml
+  - !include generated/vista_piano_mansarda.yaml
+  - !include generated/vista_clima.yaml
+  - !include views/energia.yaml
+  - !include generated/vista_persone.yaml
+  - !include views/automazioni.yaml
+  - !include views/diagnostica.yaml

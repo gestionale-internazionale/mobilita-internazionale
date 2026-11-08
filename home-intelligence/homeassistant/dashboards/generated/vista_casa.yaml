@@ -1,0 +1,96 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+title: Casa
+path: casa
+icon: mdi:floor-plan
+type: sections
+max_columns: 3
+sections:
+- type: grid
+  cards:
+  - type: heading
+    heading: Piani
+    heading_style: title
+    icon: mdi:floor-plan
+  - type: markdown
+    content: '## Piano inferiore
+
+      Zona giorno {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_giorno_luci'',''on'') else ''''
+      }}{{ '' '' ~ states(''sensor.hi_area_inferiore_giorno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_giorno_temperatura'')
+      else '''' }} · Cucina {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_cucina_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_cucina_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_cucina_temperatura'')
+      else '''' }} · Ingresso {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_ingresso_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_ingresso_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_ingresso_temperatura'')
+      else '''' }} · Servizi {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_servizi_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_servizi_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_servizi_temperatura'')
+      else '''' }}'
+  - type: button
+    name: Apri Piano inferiore
+    icon: mdi:home-floor-0
+    show_state: false
+    tap_action:
+      action: navigate
+      navigation_path: /home-intelligence/casa-piano_inferiore
+  - type: markdown
+    content: '## Mansarda
+
+      Mansarda principale {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_principale_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_principale_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_principale_temperatura'')
+      else '''' }} · Mansarda secondaria {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_secondaria_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_secondaria_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_secondaria_temperatura'')
+      else '''' }}'
+  - type: button
+    name: Apri Mansarda
+    icon: mdi:home-roof
+    show_state: false
+    tap_action:
+      action: navigate
+      navigation_path: /home-intelligence/casa-mansarda
+- type: grid
+  cards:
+  - type: heading
+    heading: Luci accese
+    heading_style: subtitle
+    icon: mdi:lightbulb-group
+  - type: markdown
+    content: '{% set accese = (states.light | selectattr(''state'',''eq'',''on'') | map(attribute=''entity_id'')
+      | list + label_entities(''hi_luce'') | select(''is_state'',''on'') | list) | unique | list %}{%
+      if accese | count == 0 %}Tutte le luci sono spente.{% else %}{% for e in accese %}- {{ state_attr(e,''friendly_name'')
+      }}{% if area_name(e) %} · <small>{{ area_name(e) }}</small>{% endif %}
+
+      {% endfor %}{% endif %}'
+  - type: button
+    name: Spegni luci e carichi non essenziali
+    icon: mdi:power
+    tap_action:
+      action: perform-action
+      perform_action: script.hi_spegni_non_essenziali
+      confirmation:
+        text: Spegnere tutte le luci e i carichi non essenziali?
+- type: grid
+  cards:
+  - type: heading
+    heading: Altre aree
+    heading_style: subtitle
+    icon: mdi:texture-box
+  - type: area
+    area: esterno
+    display_type: compact
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+  - type: area
+    area: locale_tecnico
+    display_type: compact
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline

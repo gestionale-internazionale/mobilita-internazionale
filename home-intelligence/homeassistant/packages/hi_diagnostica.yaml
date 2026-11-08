@@ -1,0 +1,215 @@
+# =============================================================================
+# HOME INTELLIGENCE – Diagnostica
+# Disponibilità dispositivi, errori delle automazioni, stato dei moduli.
+# =============================================================================
+
+counter:
+  hi_errori_automazioni:
+    name: Errori automazioni/script
+    icon: mdi:alert-circle
+    restore: true
+    step: 1
+
+template:
+  - sensor:
+      # Entità monitorate non disponibili (etichetta hi_monitorato + ruoli
+      # clima ed energia), coerenti con l'ambiente simulazione/reale.
+      - name: Entità non disponibili
+        unique_id: hi_entita_offline
+        default_entity_id: sensor.hi_entita_offline
+        icon: mdi:lan-disconnect
+        unit_of_measurement: entità
+        state: >
+          {% from 'hi_common.jinja' import hi_ruolo %}
+          {% set ns = namespace(e=[]) %}
+          {% for l in labels() | select('match', '^hi_(monitorato|temp_|pdc_|termostato_|en_)') %}
+            {% set ns.e = ns.e + (hi_ruolo(l) | from_json) %}
+          {% endfor %}
+          {{ ns.e | unique | select('is_state', ['unavailable', 'unknown']) | list | count }}
+        attributes:
+          elenco: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {% set ns = namespace(e=[]) %}
+            {% for l in labels() | select('match', '^hi_(monitorato|temp_|pdc_|termostato_|en_)') %}
+              {% set ns.e = ns.e + (hi_ruolo(l) | from_json) %}
+            {% endfor %}
+            {{ ns.e | unique | select('is_state', ['unavailable', 'unknown']) | list }}
+          monitorate: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {% set ns = namespace(e=[]) %}
+            {% for l in labels() | select('match', '^hi_(monitorato|temp_|pdc_|termostato_|en_)') %}
+              {% set ns.e = ns.e + (hi_ruolo(l) | from_json) %}
+            {% endfor %}
+            {{ ns.e | unique | list | count }}
+
+      # Quante entità sono associate a ciascun ruolo (diagnostica del modello).
+      - name: Ruoli configurati
+        unique_id: hi_ruoli_configurati
+        default_entity_id: sensor.hi_ruoli_configurati
+        icon: mdi:tag-multiple
+        state: >
+          {% from 'hi_common.jinja' import hi_ruolo %}
+          {% set ns = namespace(n=0) %}
+          {% for l in labels() | select('match', '^hi_') | reject('eq', 'hi_simulazione') %}
+            {% if hi_ruolo(l) | from_json | count > 0 %}{% set ns.n = ns.n + 1 %}{% endif %}
+          {% endfor %}
+          {{ ns.n }}
+        attributes:
+          dettaglio: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {% set ns = namespace(d={}) %}
+            {% for l in labels() | select('match', '^hi_') | reject('eq', 'hi_simulazione') | sort %}
+              {% set ns.d = dict(ns.d, **{l: hi_ruolo(l) | from_json | count}) %}
+            {% endfor %}
+            {{ ns.d }}
+          etichette_hi_presenti: "{{ labels() | select('match', '^hi_') | list | count }}"
+
+      # Stato sintetico dei moduli: attivo | predisposto | simulato | disattivato
+      - name: Stato moduli
+        unique_id: hi_stato_moduli
+        default_entity_id: sensor.hi_stato_moduli
+        icon: mdi:view-dashboard-variant
+        state: "{{ 'simulazione' if is_state('input_boolean.sim_ambiente_simulato', 'on') else 'reale' }}"
+        attributes:
+          presenza: >
+            {% if is_state('input_boolean.sim_ambiente_simulato', 'on') %}simulato
+            {% elif states.person | rejectattr('entity_id', 'match', 'person\.sim_') | list | count > 0 %}attivo
+            {% else %}predisposto{% endif %}
+          pompe_di_calore: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {% set n = (hi_ruolo('hi_pdc_inferiore') | from_json | count) + (hi_ruolo('hi_pdc_mansarda') | from_json | count) %}
+            {{ ('simulato' if is_state('input_boolean.sim_ambiente_simulato', 'on') else 'attivo') if n > 0 else 'predisposto' }}
+          termostati: >
+            {% from 'hi_common.jinja' import hi_ruolo %}
+            {% set n = (hi_ruolo('hi_termostato_inferiore') | from_json | count) + (hi_ruolo('hi_termostato_mansarda') | from_json | count) %}
+            {{ ('simulato' if is_state('input_boolean.sim_ambiente_simulato', 'on') else 'attivo') if n > 0 else 'predisposto' }}
+          supervisore_termico: "attivo (solo decisioni)"
+          attuazione_clima: >
+            {{ 'abilitata' if is_state('input_boolean.hi_clima_controllo_automatico', 'on') else 'disattivata' }}
+          energia: >
+            {% if not has_value('sensor.hi_en_pv_potenza') and not has_value('sensor.hi_en_rete_prelievo') %}predisposto
+            {% elif is_state('input_boolean.sim_ambiente_simulato', 'on') %}simulato
+            {% else %}attivo{% endif %}
+          ottimizzazione_energia: predisposto
+          notifiche_push: >
+            {{ 'attive' if is_state('input_boolean.hi_notifiche_push', 'on') and states('input_text.hi_notifica_destinatari') | length > 0 else 'non configurate' }}
+
+  - binary_sensor:
+      - name: Comunicazione impianti clima
+        unique_id: hi_clima_comunicazione
+        default_entity_id: binary_sensor.hi_clima_comunicazione
+        device_class: problem
+        icon: mdi:hvac-off
+        # on = PROBLEMA: almeno un'entità clima configurata non è disponibile
+        state: >
+          {% from 'hi_common.jinja' import hi_ruolo %}
+          {% set ns = namespace(e=[]) %}
+          {% for l in labels() | select('match', '^hi_(pdc|termostato)_') %}
+            {% set ns.e = ns.e + (hi_ruolo(l) | from_json) %}
+          {% endfor %}
+          {{ ns.e | select('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+
+automation:
+  - id: hi_diag_dispositivi_offline
+    alias: HI · Diagnostica · Dispositivi non disponibili
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.hi_entita_offline
+        above: 0
+        for: {minutes: 15}
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_diag_offline
+          titolo: Dispositivi non disponibili
+          messaggio: >-
+            {{ states('sensor.hi_entita_offline') }} entità non rispondono:
+            {{ state_attr('sensor.hi_entita_offline', 'elenco') | map('state_attr', 'friendly_name') | join(', ') }}
+      # Anti-ripetizione: al massimo un avviso ogni 6 ore.
+      - delay: {hours: 6}
+
+  - id: hi_diag_dispositivi_ripristinati
+    alias: HI · Diagnostica · Dispositivi ripristinati
+    mode: single
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.hi_entita_offline
+        below: 1
+        for: {minutes: 5}
+    actions:
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: hi_diag_offline
+
+  - id: hi_diag_clima_comunicazione
+    alias: HI · Diagnostica · Comunicazione impianti clima
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_clima_comunicazione
+        from: "off"
+        to: "on"
+        for: {minutes: 10}
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_diag_clima
+          titolo: Problema di comunicazione con il clima
+          messaggio: >-
+            Una o più unità clima non rispondono da 10 minuti. Il supervisore
+            sospende i comandi verso le unità non disponibili.
+      - delay: {hours: 2}
+
+  - id: hi_diag_errori_automazioni
+    alias: HI · Diagnostica · Errori automazioni
+    mode: queued
+    max: 10
+    max_exceeded: silent
+    triggers:
+      - trigger: event
+        event_type: system_log_event
+        event_data:
+          level: ERROR
+    conditions:
+      - condition: template
+        value_template: >
+          {{ trigger.event.data.name is string and
+             (trigger.event.data.name.startswith('homeassistant.components.automation')
+              or trigger.event.data.name.startswith('homeassistant.components.script')
+              or trigger.event.data.name.startswith('homeassistant.components.template')
+              or trigger.event.data.name.startswith('homeassistant.helpers.script')
+              or trigger.event.data.name.startswith('homeassistant.helpers.template')) }}
+    actions:
+      - action: counter.increment
+        target: {entity_id: counter.hi_errori_automazioni}
+      - action: script.hi_notifica_errore
+        data:
+          testo: "{{ (trigger.event.data.message | default(['?']))[0] | string | truncate(300) }}"
+
+script:
+  # Notifica errori con anti-ripetizione (max 1 ogni 30 minuti).
+  hi_notifica_errore:
+    alias: HI · Diagnostica · Notifica errore (anti-ripetizione)
+    mode: single
+    max_exceeded: silent
+    fields:
+      testo:
+        selector:
+          text:
+    sequence:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_diag_errori
+          titolo: Errore in un'automazione
+          messaggio: "{{ testo }} (errori totali: {{ states('counter.hi_errori_automazioni') }})"
+      - delay: {minutes: 30}

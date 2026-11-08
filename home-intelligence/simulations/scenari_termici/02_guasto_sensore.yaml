@@ -1,0 +1,18 @@
+# Guasti intermittenti del sensore: durante il guasto nessun comando
+# (decisione "invariato"), alla ripresa la logica riparte senza oscillazioni.
+nome: Guasto sensore intermittente
+stagione: inverno
+durata_ore: 12
+passo_min: 5
+fonte: auto
+iniziale: {t: 19.0, m: 19.0, esterna: 4.0}
+setpoint: [{da_ora: 0, valore: 20.5}]
+eventi:
+  - {ora: 2, sensore: guasto}
+  - {ora: 3, sensore: ok}
+  - {ora: 6, sensore: guasto}
+  - {ora: 6.25, sensore: ok}
+attese:
+  invariato_durante_guasto: true
+  max_commutazioni_pav: 6
+  max_commutazioni_pdc: 8

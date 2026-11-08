@@ -1,0 +1,64 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+title: Persone
+path: persone
+icon: mdi:account-group
+type: sections
+max_columns: 3
+sections:
+- type: grid
+  cards:
+  - type: heading
+    heading: Presenza
+    heading_style: title
+    icon: mdi:account-group
+  - type: tile
+    entity: sensor.hi_occupazione
+    name: Occupazione
+  - type: tile
+    entity: sensor.hi_persone_in_casa
+    name: Persone in casa
+  - type: markdown
+    content: '{% set pp = states.person | list %}{% if pp | count == 0 %}<ha-alert alert-type="info">Nessuna
+      persona configurata. Installa la Companion App e associa il telefono in Impostazioni → Persone.</ha-alert>{%
+      else %}| Persona | Stato | Aggiornato |
+
+      |---|---|---|
+
+      {% for p in pp %}| {{ p.name }} | {{ ''In casa'' if p.state == ''home'' else (''Fuori'' if p.state
+      == ''not_home'' else p.state) }} | {{ relative_time(p.last_changed) }} fa |
+
+      {% endfor %}{% endif %}{% set ob = state_attr(''sensor.hi_persone_in_casa'',''tracker_obsoleti'')
+      or [] %}{% if ob | count > 0 %}
+
+      <ha-alert alert-type="warning">Posizione non aggiornata: {{ ob | join('', '') }}</ha-alert>{% endif
+      %}'
+- type: grid
+  cards:
+  - type: heading
+    heading: Impostazioni presenza
+    heading_style: subtitle
+    icon: mdi:cog
+  - type: tile
+    entity: input_select.hi_presenza_override
+    name: Override presenza
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_boolean.hi_ospiti
+    name: Ospiti in casa
+    tap_action:
+      action: toggle
+  - type: entities
+    entities:
+    - input_number.hi_assenza_ritardo_min
+    - input_number.hi_tracker_obsoleto_ore
+    - input_boolean.hi_prepara_arrivo
+    - binary_sensor.hi_presenza_supplementare
+  - type: markdown
+    content: <small>La posizione è usata solo per le funzioni domotiche ed è visibile solo agli utenti
+      di questa istanza. Ogni persona può disattivare la localizzazione dalla Companion App.</small>

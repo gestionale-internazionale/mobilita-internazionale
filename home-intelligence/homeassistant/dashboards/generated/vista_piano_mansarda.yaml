@@ -1,0 +1,137 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+title: Mansarda
+path: casa-mansarda
+icon: mdi:home-roof
+subview: true
+back_path: /home-intelligence/casa
+type: sections
+max_columns: 3
+sections:
+- type: grid
+  column_span: 2
+  cards:
+  - type: heading
+    heading: Mansarda · planimetria
+    heading_style: title
+    icon: mdi:home-roof
+  - type: markdown
+    content: '{% if is_state(''binary_sensor.hi_ambiente_simulazione'',''on'') %}<ha-alert alert-type="warning">Ambiente
+      di <b>SIMULAZIONE</b>: le entità [SIM] sono virtuali.</ha-alert>{% endif %}<ha-alert alert-type="info">Planimetria
+      <b>provvisoria</b> e ambienti da confermare. Tocca la lampadina per accendere/spegnere le luci dell''ambiente.</ha-alert>'
+  - type: picture-elements
+    image: /local/floorplans/mansarda.svg
+    elements:
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_principale_luci
+      style:
+        left: 33.0%
+        top: 50.0%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: mansarda_principale
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_mansarda_principale_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_mansarda_principale_temperatura
+        style:
+          left: 33.0%
+          top: 61.0%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_principale_occupata
+      style:
+        left: 58.0%
+        top: 13.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_secondaria_luci
+      style:
+        left: 81.0%
+        top: 50.0%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: mansarda_secondaria
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_mansarda_secondaria_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_mansarda_secondaria_temperatura
+        style:
+          left: 81.0%
+          top: 61.0%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_secondaria_occupata
+      style:
+        left: 92.0%
+        top: 13.0%
+  - type: tile
+    entity: sensor.hi_mansarda_supervisore
+    name: Clima Mansarda
+    tap_action:
+      action: navigate
+      navigation_path: /home-intelligence/clima
+- type: grid
+  cards:
+  - type: heading
+    heading: Mansarda principale (provvisoria)
+    heading_style: subtitle
+    icon: mdi:bed
+  - type: area
+    area: mansarda_principale
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/mansarda_principale
+- type: grid
+  cards:
+  - type: heading
+    heading: Mansarda secondaria (provvisoria)
+    heading_style: subtitle
+    icon: mdi:desk
+  - type: area
+    area: mansarda_secondaria
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/mansarda_secondaria

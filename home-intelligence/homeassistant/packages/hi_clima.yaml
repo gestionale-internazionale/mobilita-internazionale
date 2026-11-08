@@ -1,0 +1,366 @@
+# =============================================================================
+# HOME INTELLIGENCE – Clima: parametri globali e attuazione protetta
+# =============================================================================
+# Architettura a tre livelli (vedi docs/clima-supervisore.md):
+#   1. Misure/ruoli  → sensor.hi_<zona>_temperatura, ... (etichette hi_temp_*)
+#   2. Supervisore   → sensor.hi_<zona>_supervisore (decisioni, nessun comando)
+#   3. Attuazione    → script.hi_clima_attua (questo file), protetta da:
+#        - input_boolean.hi_clima_controllo_automatico   (generale, OFF)
+#        - input_boolean.hi_clima_attuazione_pdc_<zona>   (per fonte, OFF)
+#        - input_boolean.hi_clima_attuazione_pavimento_<zona> (per fonte, OFF)
+#        - binary_sensor.hi_sistema_pronto (5 min dopo l'avvio)
+#        - separazione simulazione/reale
+# I pacchetti per zona sono in packages/generated/hi_zone.yaml.
+# =============================================================================
+
+input_select:
+  hi_clima_stagione:
+    name: Stagione climatizzazione
+    icon: mdi:sun-snowflake-variant
+    options: [inverno, estate, spento]
+
+input_boolean:
+  hi_clima_controllo_automatico:
+    name: Controllo automatico clima (consenso generale)
+    icon: mdi:shield-lock-open
+
+input_number:
+  # Setpoint globali di assenza/vacanza
+  hi_clima_assenza:
+    name: Setpoint assenza (inverno)
+    min: 12
+    max: 20
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:home-export-outline
+    mode: box
+  hi_clima_vacanza:
+    name: Setpoint vacanza (inverno)
+    min: 7
+    max: 18
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:airplane
+    mode: box
+  hi_clima_raffr_assenza:
+    name: Setpoint raffrescamento casa vuota
+    min: 24
+    max: 32
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:snowflake-off
+    mode: box
+  hi_clima_pavimento_setback:
+    name: Setpoint termostato pavimento a riposo
+    min: 7
+    max: 18
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:heating-coil
+    mode: box
+  # Parametri del supervisore
+  hi_clima_isteresi:
+    name: Isteresi
+    min: 0.1
+    max: 2
+    step: 0.1
+    unit_of_measurement: "°C"
+    icon: mdi:arrow-expand-vertical
+    mode: box
+  hi_clima_soglia_boost:
+    name: Soglia integrazione pompa di calore
+    min: 0.5
+    max: 5
+    step: 0.1
+    unit_of_measurement: "°C"
+    icon: mdi:rocket-launch
+    mode: box
+  hi_clima_pav_min_on:
+    name: Pavimento – tempo minimo acceso
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-outline
+    mode: box
+  hi_clima_pav_min_off:
+    name: Pavimento – tempo minimo spento
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-off-outline
+    mode: box
+  hi_clima_pdc_min_on:
+    name: Pompa di calore – tempo minimo accesa
+    min: 0
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-outline
+    mode: box
+  hi_clima_pdc_min_off:
+    name: Pompa di calore – tempo minimo spenta
+    min: 0
+    max: 120
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-off-outline
+    mode: box
+  hi_clima_pdc_min_esterna:
+    name: Pompa di calore – temperatura esterna minima
+    min: -25
+    max: 10
+    step: 1
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer-low
+    mode: box
+  hi_clima_t_min_sicurezza:
+    name: Limite inferiore di sicurezza (estate)
+    min: 10
+    max: 24
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer-alert
+    mode: box
+  hi_clima_t_max_sicurezza:
+    name: Limite superiore di sicurezza (inverno)
+    min: 22
+    max: 32
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer-alert
+    mode: box
+  hi_clima_boost_dopo_min:
+    name: Integrazione per salita lenta dopo
+    min: 15
+    max: 480
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:chart-line-variant
+    mode: box
+  hi_clima_variazione_min:
+    name: Velocità di salita minima attesa
+    min: 0
+    max: 2
+    step: 0.05
+    unit_of_measurement: "°C/h"
+    icon: mdi:speedometer-slow
+    mode: box
+  hi_clima_inerzia_ore:
+    name: Compensazione inerzia pavimento (0 = disattiva)
+    min: 0
+    max: 4
+    step: 0.25
+    unit_of_measurement: h
+    icon: mdi:weight
+    mode: box
+  hi_clima_override_ore:
+    name: Durata override manuale
+    min: 0.5
+    max: 24
+    step: 0.5
+    unit_of_measurement: h
+    icon: mdi:hand-back-right
+    mode: box
+  hi_clima_allarme_min:
+    name: Allarme temperatura sotto
+    min: 5
+    max: 18
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:snowflake-alert
+    mode: box
+  hi_clima_allarme_max:
+    name: Allarme temperatura sopra
+    min: 24
+    max: 40
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:fire-alert
+    mode: box
+
+template:
+  - sensor:
+      - name: Temperatura esterna
+        unique_id: hi_temperatura_esterna
+        default_entity_id: sensor.hi_temperatura_esterna
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_esterna') }}
+        availability: >
+          {% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_esterna') | is_number }}
+
+script:
+  hi_clima_parametri_predefiniti:
+    alias: HI · Clima · Parametri predefiniti
+    icon: mdi:restore
+    mode: single
+    sequence:
+      - repeat:
+          for_each:
+            - {e: input_number.hi_clima_assenza, v: 17}
+            - {e: input_number.hi_clima_vacanza, v: 14}
+            - {e: input_number.hi_clima_raffr_assenza, v: 29}
+            - {e: input_number.hi_clima_pavimento_setback, v: 15}
+            - {e: input_number.hi_clima_isteresi, v: 0.3}
+            - {e: input_number.hi_clima_soglia_boost, v: 1.5}
+            - {e: input_number.hi_clima_pav_min_on, v: 60}
+            - {e: input_number.hi_clima_pav_min_off, v: 60}
+            - {e: input_number.hi_clima_pdc_min_on, v: 20}
+            - {e: input_number.hi_clima_pdc_min_off, v: 15}
+            - {e: input_number.hi_clima_pdc_min_esterna, v: -15}
+            - {e: input_number.hi_clima_t_min_sicurezza, v: 16}
+            - {e: input_number.hi_clima_t_max_sicurezza, v: 28}
+            - {e: input_number.hi_clima_boost_dopo_min, v: 90}
+            - {e: input_number.hi_clima_variazione_min, v: 0.2}
+            - {e: input_number.hi_clima_inerzia_ore, v: 1.0}
+            - {e: input_number.hi_clima_override_ore, v: 3}
+            - {e: input_number.hi_clima_allarme_min, v: 12}
+            - {e: input_number.hi_clima_allarme_max, v: 30}
+          sequence:
+            - action: input_number.set_value
+              target:
+                entity_id: "{{ repeat.item.e }}"
+              data:
+                value: "{{ repeat.item.v }}"
+
+  # ---------------------------------------------------------------------------
+  # Attuazione: traduce la decisione del supervisore in comandi, SOLO se tutti
+  # i consensi sono attivi. Non comanda valvole/caldaie: solo entità climate
+  # con etichetta hi_pdc_<zona> (Daikin) o hi_termostato_<zona> (termostati).
+  # ---------------------------------------------------------------------------
+  hi_clima_attua:
+    alias: HI · Clima · Attuazione decisione
+    icon: mdi:hvac
+    mode: queued
+    max: 10
+    fields:
+      zona:
+        required: true
+        selector:
+          text:
+      pav:
+        description: on | off | invariato
+        selector:
+          text:
+      pdc:
+        description: heat | cool | off | invariato
+        selector:
+          text:
+    sequence:
+      - variables:
+          sim: "{{ is_state('input_boolean.sim_ambiente_simulato', 'on') }}"
+          setpoint: "{{ states('sensor.hi_' ~ zona ~ '_setpoint') | float(none) }}"
+          setback: "{{ states('input_number.hi_clima_pavimento_setback') | float(15) }}"
+          consenso_pdc: >
+            {{ is_state('input_boolean.hi_clima_controllo_automatico', 'on')
+               and is_state('input_boolean.hi_clima_attuazione_pdc_' ~ zona, 'on') }}
+          consenso_pav: >
+            {{ is_state('input_boolean.hi_clima_controllo_automatico', 'on')
+               and is_state('input_boolean.hi_clima_attuazione_pavimento_' ~ zona, 'on') }}
+          # Separazione simulazione/reale: hi_disponibili restituisce solo
+          # entità della famiglia corretta; il filtro sul prefisso è un'ulteriore
+          # garanzia che in simulazione non si comandino impianti reali.
+          pdc_entita: >
+            {% from 'hi_common.jinja' import hi_disponibili %}
+            {{ hi_disponibili('hi_pdc_' ~ zona) | from_json | select('match', 'climate\\.')
+               | select('match', 'climate\\.sim_' if sim else 'climate\\.(?!sim_)') | list }}
+          pav_entita: >
+            {% from 'hi_common.jinja' import hi_disponibili %}
+            {{ hi_disponibili('hi_termostato_' ~ zona) | from_json | select('match', 'climate\\.')
+               | select('match', 'climate\\.sim_' if sim else 'climate\\.(?!sim_)') | list }}
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+      # --- Pompe di calore -----------------------------------------------------
+      - if:
+          - condition: template
+            value_template: "{{ consenso_pdc and pdc in ['heat', 'cool', 'off'] and pdc_entita | count > 0 }}"
+        then:
+          - repeat:
+              for_each: "{{ pdc_entita }}"
+              sequence:
+                - variables:
+                    modi: "{{ state_attr(repeat.item, 'hvac_modes') or [] }}"
+                    tmin: "{{ state_attr(repeat.item, 'min_temp') | float(7) }}"
+                    tmax: "{{ state_attr(repeat.item, 'max_temp') | float(35) }}"
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: "{{ pdc == 'off' and states(repeat.item) != 'off' and 'off' in modi }}"
+                      sequence:
+                        - action: climate.set_hvac_mode
+                          target:
+                            entity_id: "{{ repeat.item }}"
+                          data:
+                            hvac_mode: "off"
+                    - conditions:
+                        - condition: template
+                          value_template: "{{ pdc in ['heat', 'cool'] and pdc in modi and setpoint is number }}"
+                      sequence:
+                        - if:
+                            - condition: template
+                              value_template: "{{ states(repeat.item) != pdc }}"
+                          then:
+                            - action: climate.set_hvac_mode
+                              target:
+                                entity_id: "{{ repeat.item }}"
+                              data:
+                                hvac_mode: "{{ pdc }}"
+                        - action: climate.set_temperature
+                          target:
+                            entity_id: "{{ repeat.item }}"
+                          data:
+                            temperature: "{{ [[setpoint, tmin] | max, tmax] | min }}"
+      # --- Pavimento radiante (solo setpoint del termostato, MAI raffrescamento)
+      - if:
+          - condition: template
+            value_template: "{{ consenso_pav and pav in ['on', 'off'] and pav_entita | count > 0 }}"
+        then:
+          - repeat:
+              for_each: "{{ pav_entita }}"
+              sequence:
+                - variables:
+                    modi: "{{ state_attr(repeat.item, 'hvac_modes') or [] }}"
+                    tmin: "{{ state_attr(repeat.item, 'min_temp') | float(5) }}"
+                    tmax: "{{ state_attr(repeat.item, 'max_temp') | float(30) }}"
+                    valore: "{{ setpoint if (pav == 'on' and setpoint is number) else setback }}"
+                - if:
+                    - condition: template
+                      value_template: "{{ 'heat' in modi }}"
+                  then:
+                    - if:
+                        - condition: template
+                          value_template: "{{ states(repeat.item) != 'heat' }}"
+                      then:
+                        - action: climate.set_hvac_mode
+                          target:
+                            entity_id: "{{ repeat.item }}"
+                          data:
+                            hvac_mode: heat
+                    - action: climate.set_temperature
+                      target:
+                        entity_id: "{{ repeat.item }}"
+                      data:
+                        temperature: "{{ [[valore, tmin] | max, tmax] | min }}"
+      # --- Registro di quanto comandato (per rilevare interventi manuali) ------
+      - if:
+          - condition: template
+            value_template: "{{ (consenso_pdc and pdc_entita | count > 0) or (consenso_pav and pav_entita | count > 0) }}"
+        then:
+          - action: input_text.set_value
+            target:
+              entity_id: "input_text.hi_clima_{{ zona }}_comandato"
+            data:
+              value: >
+                {{ {'pdc': pdc if consenso_pdc else 'n/d', 'pav': pav if consenso_pav else 'n/d',
+                    't': setpoint, 'tb': setback, 'ts': now().isoformat()} | to_json }}
+          - action: logbook.log
+            data:
+              name: Home Intelligence Clima
+              message: "Zona {{ zona }}: pavimento={{ pav }}, pompa di calore={{ pdc }}, setpoint={{ setpoint }}"
+
+# Gli allarmi di temperatura per zona sono in packages/generated/hi_zone.yaml.

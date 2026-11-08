@@ -1,0 +1,241 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+title: Piano inferiore
+path: casa-piano_inferiore
+icon: mdi:home-floor-0
+subview: true
+back_path: /home-intelligence/casa
+type: sections
+max_columns: 3
+sections:
+- type: grid
+  column_span: 2
+  cards:
+  - type: heading
+    heading: Piano inferiore · planimetria
+    heading_style: title
+    icon: mdi:home-floor-0
+  - type: markdown
+    content: '{% if is_state(''binary_sensor.hi_ambiente_simulazione'',''on'') %}<ha-alert alert-type="warning">Ambiente
+      di <b>SIMULAZIONE</b>: le entità [SIM] sono virtuali.</ha-alert>{% endif %}<ha-alert alert-type="info">Planimetria
+      <b>provvisoria</b> e ambienti da confermare. Tocca la lampadina per accendere/spegnere le luci dell''ambiente.</ha-alert>'
+  - type: picture-elements
+    image: /local/floorplans/piano_inferiore.svg
+    elements:
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_giorno_luci
+      style:
+        left: 30.5%
+        top: 34.0%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_giorno
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_giorno_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_giorno_temperatura
+        style:
+          left: 30.5%
+          top: 45.0%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_giorno_occupata
+      style:
+        left: 53.0%
+        top: 13.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_cucina_luci
+      style:
+        left: 78.5%
+        top: 25.0%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_cucina
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_cucina_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_cucina_temperatura
+        style:
+          left: 78.5%
+          top: 36.0%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_cucina_occupata
+      style:
+        left: 92.0%
+        top: 13.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_ingresso_luci
+      style:
+        left: 78.5%
+        top: 71.5%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_ingresso
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_ingresso_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_ingresso_temperatura
+        style:
+          left: 78.5%
+          top: 82.5%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_ingresso_occupata
+      style:
+        left: 92.0%
+        top: 56.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_servizi_luci
+      style:
+        left: 30.5%
+        top: 80.5%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_servizi
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_servizi_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_servizi_temperatura
+        style:
+          left: 30.5%
+          top: 91.5%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_servizi_occupata
+      style:
+        left: 53.0%
+        top: 74.0%
+  - type: tile
+    entity: sensor.hi_inferiore_supervisore
+    name: Clima Piano inferiore
+    tap_action:
+      action: navigate
+      navigation_path: /home-intelligence/clima
+- type: grid
+  cards:
+  - type: heading
+    heading: Zona giorno (provvisoria)
+    heading_style: subtitle
+    icon: mdi:sofa
+  - type: area
+    area: inferiore_giorno
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_giorno
+- type: grid
+  cards:
+  - type: heading
+    heading: Cucina (provvisoria)
+    heading_style: subtitle
+    icon: mdi:countertop
+  - type: area
+    area: inferiore_cucina
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_cucina
+- type: grid
+  cards:
+  - type: heading
+    heading: Ingresso (provvisoria)
+    heading_style: subtitle
+    icon: mdi:door
+  - type: area
+    area: inferiore_ingresso
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_ingresso
+- type: grid
+  cards:
+  - type: heading
+    heading: Servizi (provvisoria)
+    heading_style: subtitle
+    icon: mdi:shower
+  - type: area
+    area: inferiore_servizi
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_servizi

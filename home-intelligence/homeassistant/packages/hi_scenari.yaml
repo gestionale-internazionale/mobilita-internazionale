@@ -1,0 +1,254 @@
+# =============================================================================
+# HOME INTELLIGENCE – Scenari
+# =============================================================================
+# Gli scenari agiscono SOLO su entità individuate per etichetta, escludendo
+# sempre quelle con etichetta hi_critico e quelle non disponibili.
+# Ogni scenario: mode single (attivazioni ripetute ignorate), modalità casa
+# cambiata solo tramite script.hi_imposta_modo, nessuna accensione massiva.
+# =============================================================================
+
+script:
+  hi_spegni_non_essenziali:
+    alias: HI · Spegni luci e carichi non essenziali
+    icon: mdi:power-plug-off
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - variables:
+          bersagli: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ (hi_comandabili('hi_luce') | from_json + hi_comandabili('hi_carico_non_essenziale') | from_json)
+               | unique | select('is_state', 'on') | list }}
+      - if:
+          - condition: template
+            value_template: "{{ bersagli | count > 0 }}"
+        then:
+          - action: homeassistant.turn_off
+            target:
+              entity_id: "{{ bersagli }}"
+
+  hi_scenario_buongiorno:
+    alias: HI · Scenario · Buongiorno
+    icon: mdi:weather-sunset-up
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Buongiorno · {{ now().strftime('%d/%m %H:%M') }}"}
+      - if:
+          - condition: state
+            entity_id: input_select.hi_modo_casa
+            state: [Notte, Assente]
+        then:
+          - action: script.hi_imposta_modo
+            data: {modo: Casa, origine: scenario Buongiorno}
+      # Spegne le luci notturne lasciate accese.
+      - variables:
+          notturne: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ hi_comandabili('hi_luce_notturna') | from_json | select('is_state', 'on') | list }}
+      - if:
+          - condition: template
+            value_template: "{{ notturne | count > 0 }}"
+        then:
+          - action: homeassistant.turn_off
+            target: {entity_id: "{{ notturne }}"}
+
+  hi_scenario_buonanotte:
+    alias: HI · Scenario · Buonanotte
+    icon: mdi:weather-night
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Buonanotte · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: script.hi_imposta_modo
+        data: {modo: Notte, origine: scenario Buonanotte}
+      - variables:
+          notturne: "{{ label_entities('hi_luce_notturna') }}"
+          bersagli: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ (hi_comandabili('hi_luce') | from_json + hi_comandabili('hi_carico_non_essenziale') | from_json)
+               | unique | reject('in', label_entities('hi_luce_notturna')) | select('is_state', 'on') | list }}
+          finestre: >
+            {{ states.binary_sensor | selectattr('entity_id', 'match', 'binary_sensor\.hi_[a-z0-9_]+_finestra$')
+               | selectattr('state', 'eq', 'on') | map(attribute='name') | list }}
+      - if:
+          - condition: template
+            value_template: "{{ bersagli | count > 0 }}"
+        then:
+          - action: homeassistant.turn_off
+            target: {entity_id: "{{ bersagli }}"}
+      - if:
+          - condition: template
+            value_template: "{{ finestre | count > 0 }}"
+        then:
+          - action: script.hi_notifica
+            data:
+              livello: importante
+              id: hi_buonanotte_finestre
+              titolo: Finestre aperte
+              messaggio: "Attenzione: {{ finestre | join(', ') }}."
+
+  hi_scenario_esco:
+    alias: HI · Scenario · Esco di casa
+    icon: mdi:exit-run
+    mode: single
+    max_exceeded: silent
+    description: >-
+      Spegne luci e carichi non essenziali. Non cambia la modalità: sarà la
+      presenza a passare ad Assente quando tutti saranno fuori.
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Esco · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: script.hi_spegni_non_essenziali
+
+  hi_scenario_tutti_fuori:
+    alias: HI · Scenario · Tutti fuori
+    icon: mdi:home-export-outline
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Tutti fuori · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_presenza_override}
+        data: {option: automatico}
+      - action: script.hi_imposta_modo
+        data: {modo: Assente, origine: scenario Tutti fuori}
+      - action: script.hi_spegni_non_essenziali
+
+  hi_scenario_rientro:
+    alias: HI · Scenario · Rientro
+    icon: mdi:home-import-outline
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Rientro · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_presenza_override}
+        data: {option: automatico}
+      - action: script.hi_imposta_modo
+        data:
+          modo: "{{ 'Notte' if is_state('binary_sensor.hi_fascia_notturna', 'on') else 'Casa' }}"
+          origine: scenario Rientro
+      - if:
+          - condition: state
+            entity_id: sun.sun
+            state: below_horizon
+        then:
+          - variables:
+              luci: >
+                {% from 'hi_common.jinja' import hi_comandabili %}
+                {{ hi_comandabili('hi_luce_ingresso') | from_json }}
+          - if:
+              - condition: template
+                value_template: "{{ luci | count > 0 }}"
+            then:
+              - action: homeassistant.turn_on
+                target: {entity_id: "{{ luci }}"}
+
+  hi_scenario_vacanza:
+    alias: HI · Scenario · Vacanza
+    icon: mdi:airplane-takeoff
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Vacanza · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_presenza_override}
+        data: {option: automatico}
+      - action: script.hi_imposta_modo
+        data: {modo: Vacanza, origine: scenario Vacanza}
+      - action: script.hi_spegni_non_essenziali
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_vacanza
+          titolo: Modalità vacanza attiva
+          messaggio: >-
+            Setpoint invernale di vacanza {{ states('input_number.hi_clima_vacanza') }} °C
+            (applicato ai dispositivi solo se l'attuazione clima è abilitata).
+
+  hi_scenario_comfort:
+    alias: HI · Scenario · Comfort
+    icon: mdi:sofa
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Comfort · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_profilo_energia}
+        data: {option: comfort}
+
+  hi_scenario_risparmio:
+    alias: HI · Scenario · Risparmio energetico
+    icon: mdi:leaf
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Risparmio · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_profilo_energia}
+        data: {option: risparmio}
+      - variables:
+          carichi: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ hi_comandabili('hi_carico_non_essenziale') | from_json | select('is_state', 'on') | list }}
+      - if:
+          - condition: template
+            value_template: "{{ carichi | count > 0 }}"
+        then:
+          - action: homeassistant.turn_off
+            target: {entity_id: "{{ carichi }}"}
+
+  hi_scenario_normale:
+    alias: HI · Scenario · Profilo normale
+    icon: mdi:home
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - action: input_text.set_value
+        target: {entity_id: input_text.hi_ultimo_scenario}
+        data: {value: "Normale · {{ now().strftime('%d/%m %H:%M') }}"}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_profilo_energia}
+        data: {option: normale}
+
+  # Commuta le luci di un'area dalla planimetria: se almeno una è accesa le
+  # spegne tutte, altrimenti accende le luci (hi_luce) dell'area.
+  hi_area_luci_commuta:
+    alias: HI · Commuta luci area
+    icon: mdi:lightbulb-group
+    mode: queued
+    max: 5
+    fields:
+      area:
+        required: true
+        selector:
+          area:
+    sequence:
+      - variables:
+          luci: >
+            {% from 'hi_common.jinja' import hi_comandabili %}
+            {{ hi_comandabili('hi_luce') | from_json | select('in', area_entities(area)) | list }}
+          accese: "{{ luci | select('is_state', 'on') | list }}"
+      - if:
+          - condition: template
+            value_template: "{{ luci | count > 0 }}"
+        then:
+          - action: "homeassistant.{{ 'turn_off' if accese | count > 0 else 'turn_on' }}"
+            target:
+              entity_id: "{{ accese if accese | count > 0 else luci }}"

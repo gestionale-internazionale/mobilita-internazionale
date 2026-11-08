@@ -1,0 +1,105 @@
+# Vista DIAGNOSTICA – disponibilità dispositivi, errori, stato dei moduli.
+title: Diagnostica
+path: diagnostica
+icon: mdi:stethoscope
+type: sections
+max_columns: 3
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: Stato del sistema
+        heading_style: title
+        icon: mdi:heart-pulse
+      - type: tile
+        entity: sensor.hi_stato_moduli
+        name: Ambiente
+      - type: tile
+        entity: binary_sensor.hi_sistema_pronto
+        name: Sistema pronto
+      - type: tile
+        entity: sensor.hi_avvio_ha
+        name: Ultimo avvio
+      - type: tile
+        entity: sensor.hi_versione
+        name: Versione configurazione
+      - type: tile
+        entity: counter.hi_errori_automazioni
+        name: Errori automazioni
+        hold_action:
+          action: perform-action
+          perform_action: counter.reset
+          target: {entity_id: counter.hi_errori_automazioni}
+          confirmation: {text: "Azzerare il contatore errori?"}
+      - type: tile
+        entity: binary_sensor.hi_clima_comunicazione
+        name: Comunicazione clima
+      - type: markdown
+        title: Moduli
+        content: >-
+          {% set m = 'sensor.hi_stato_moduli' %}
+          {% set ic = {'attivo': '🟢', 'abilitata': '🟢', 'attive': '🟢', 'simulato': '🟣',
+                       'predisposto': '⚪', 'disattivata': '⚪', 'non configurate': '⚪'} %}
+          | Modulo | Stato |
+          |---|---|
+          {% for k in ['presenza', 'pompe_di_calore', 'termostati', 'supervisore_termico', 'attuazione_clima',
+                       'energia', 'ottimizzazione_energia', 'notifiche_push'] -%}
+          | {{ k | replace('_', ' ') | capitalize }} | {{ ic.get(state_attr(m, k), '🟢') }} {{ state_attr(m, k) }} |
+          {% endfor %}
+
+          <small>🟢 attivo · 🟣 simulato · ⚪ predisposto / non attivo</small>
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Dispositivi
+        heading_style: title
+        icon: mdi:devices
+      - type: tile
+        entity: sensor.hi_entita_offline
+        name: Entità non disponibili
+      - type: markdown
+        content: >-
+          {% set l = state_attr('sensor.hi_entita_offline', 'elenco') or [] %}
+          {% if l | count == 0 %}✅ Tutte le {{ state_attr('sensor.hi_entita_offline', 'monitorate') }}
+          entità monitorate sono disponibili.
+          {% else %}{% for e in l %}- ❌ {{ state_attr(e, 'friendly_name') or e }} <small>`{{ e }}`</small>
+          {% endfor %}{% endif %}
+      - type: markdown
+        title: Ruoli (etichette) associati
+        content: >-
+          {% set d = state_attr('sensor.hi_ruoli_configurati', 'dettaglio') or {} %}
+          {% if d | count == 0 %}<ha-alert alert-type="warning">Nessuna etichetta hi_* trovata:
+          esegui <code>scripts/hi_tool.py sync --apply</code>.</ha-alert>{% else %}
+          | Ruolo | Entità |
+          |---|---|
+          {% for k, v in d.items() %}| `{{ k }}` | {{ '⚪ —' if v == 0 else v }} |
+          {% endfor %}{% endif %}
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Supervisore termico
+        heading_style: title
+        icon: mdi:brain
+      - type: markdown
+        content: >-
+          {% for z in ['inferiore', 'mansarda'] %}{% set s = 'sensor.hi_' ~ z ~ '_supervisore' %}
+          **{{ z | capitalize }}** · `{{ states(s) }}`
+          - temperatura {{ state_attr(s, 'temperatura') }} °C · setpoint {{ state_attr(s, 'setpoint') }} °C · errore {{ state_attr(s, 'errore') }}
+          - pavimento **{{ state_attr(s, 'pav') }}** (dal {{ (state_attr(s, 'pav_dal') or '') [11:16] }}) ·
+            pompa di calore **{{ state_attr(s, 'pdc') }}** (dal {{ (state_attr(s, 'pdc_dal') or '') [11:16] }})
+          - fonti disponibili: pavimento {{ '✔' if state_attr(s, 'pav_disponibile') else '✖' }},
+            pompa di calore {{ '✔' if state_attr(s, 'pdc_disponibile') else '✖' }}
+          - <small>{{ state_attr(s, 'motivo') }}</small>
+
+          {% endfor %}
+      - type: logbook
+        title: Registro Home Intelligence (24 h)
+        hours_to_show: 24
+        target:
+          entity_id:
+            - input_select.hi_modo_casa
+            - sensor.hi_inferiore_supervisore
+            - sensor.hi_mansarda_supervisore
+            - sensor.hi_occupazione

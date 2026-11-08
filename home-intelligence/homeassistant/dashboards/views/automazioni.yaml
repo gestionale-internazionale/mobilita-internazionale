@@ -1,0 +1,119 @@
+# Vista AUTOMAZIONI – scenari e impostazioni modificabili dall'utente.
+title: Automazioni
+path: automazioni
+icon: mdi:robot
+type: sections
+max_columns: 3
+sections:
+  - type: grid
+    cards:
+      - type: heading
+        heading: Scenari
+        heading_style: title
+        icon: mdi:script-text-play
+      - &scenario
+        type: tile
+        entity: script.hi_scenario_buongiorno
+        name: Buongiorno
+        hide_state: true
+        vertical: true
+        grid_options: {columns: 6}
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_buongiorno
+      - <<: *scenario
+        entity: script.hi_scenario_buonanotte
+        name: Buonanotte
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_buonanotte}
+      - <<: *scenario
+        entity: script.hi_scenario_esco
+        name: Esco di casa
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_esco}
+      - <<: *scenario
+        entity: script.hi_scenario_rientro
+        name: Rientro
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_rientro}
+      - <<: *scenario
+        entity: script.hi_scenario_tutti_fuori
+        name: Tutti fuori
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_tutti_fuori
+          confirmation: {text: "Impostare la casa come vuota e spegnere i carichi non essenziali?"}
+      - <<: *scenario
+        entity: script.hi_scenario_vacanza
+        name: Vacanza
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_scenario_vacanza
+          confirmation: {text: "Attivare la modalità vacanza?"}
+      - <<: *scenario
+        entity: script.hi_scenario_comfort
+        name: Comfort
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_comfort}
+      - <<: *scenario
+        entity: script.hi_scenario_risparmio
+        name: Risparmio energetico
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_risparmio}
+      - <<: *scenario
+        entity: script.hi_scenario_normale
+        name: Profilo normale
+        grid_options: {columns: 12}
+        tap_action: {action: perform-action, perform_action: script.hi_scenario_normale}
+      - type: tile
+        entity: input_text.hi_ultimo_scenario
+        name: Ultimo scenario
+        grid_options: {columns: 12}
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Modalità e orari
+        heading_style: title
+        icon: mdi:home-clock
+      - type: entities
+        state_color: true
+        entities:
+          - entity: input_boolean.hi_automazioni_attive
+            name: Automazioni attive (interruttore generale)
+          - input_select.hi_modo_casa
+          - input_select.hi_profilo_energia
+          - input_datetime.hi_notte_inizio
+          - input_datetime.hi_notte_fine
+          - binary_sensor.hi_fascia_notturna
+          - type: section
+            label: Presenza
+          - input_select.hi_presenza_override
+          - input_boolean.hi_ospiti
+          - input_number.hi_assenza_ritardo_min
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Notifiche
+        heading_style: title
+        icon: mdi:bell
+      - type: entities
+        state_color: true
+        entities:
+          - input_boolean.hi_notifiche_push
+          - entity: input_text.hi_notifica_destinatari
+            name: Servizi notify (es. mobile_app_pixel_8)
+      - type: markdown
+        content: >-
+          **Livelli**: *info* → solo registro · *importante* → notifica persistente + push
+          (non in modalità Notte) · *critico* → push sempre.
+          Ogni avviso ha un intervallo minimo di ripetizione.
+      - type: tile
+        entity: script.hi_notifica
+        name: Invia notifica di prova
+        icon: mdi:bell-ring
+        hide_state: true
+        tap_action:
+          action: perform-action
+          perform_action: script.hi_notifica
+          data:
+            livello: importante
+            id: hi_prova
+            titolo: Notifica di prova
+            messaggio: Home Intelligence funziona.

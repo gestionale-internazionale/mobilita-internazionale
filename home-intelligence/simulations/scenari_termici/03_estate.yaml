@@ -1,0 +1,14 @@
+# Pomeriggio estivo: il pavimento non deve MAI essere attivato.
+nome: Raffrescamento estivo
+stagione: estate
+durata_ore: 12
+passo_min: 5
+fonte: auto
+iniziale: {t: 29.0, m: 27.0, esterna: 33.0}
+setpoint: [{da_ora: 0, valore: 26.0}]
+eventi:
+  - {ora: 8, esterna: 24.0}
+attese:
+  pavimento_mai_on: true
+  pdc_modo_ammesso: [cool, "off"]
+  max_commutazioni_pdc: 12

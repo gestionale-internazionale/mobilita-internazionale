@@ -1,0 +1,25 @@
+# Tema Home Intelligence: minimale, leggibile, chiaro/scuro automatico.
+# Attivazione: Profilo utente → Tema → "Home Intelligence".
+Home Intelligence:
+  primary-color: "#2f6f8f"
+  accent-color: "#e0893a"
+  ha-card-border-radius: "16px"
+  ha-card-box-shadow: "none"
+  ha-card-border-width: "1px"
+  modes:
+    light:
+      primary-background-color: "#f4f5f7"
+      lovelace-background: "#f4f5f7"
+      card-background-color: "#ffffff"
+      ha-card-border-color: "#e3e6eb"
+      primary-text-color: "#22283a"
+      secondary-text-color: "#6b7385"
+      state-icon-active-color: "#e0a13a"
+    dark:
+      primary-background-color: "#14171c"
+      lovelace-background: "#14171c"
+      card-background-color: "#1d2128"
+      ha-card-border-color: "#2b313a"
+      primary-text-color: "#e6e8ec"
+      secondary-text-color: "#9aa1ad"
+      state-icon-active-color: "#f0b34a"

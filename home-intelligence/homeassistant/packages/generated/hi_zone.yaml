@@ -1,0 +1,684 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+# Zone termiche: helper, misure aggregate, supervisore, attuazione.
+
+input_select:
+  hi_clima_modo_inferiore:
+    name: "Clima Piano inferiore – modalità"
+    icon: mdi:thermostat-auto
+    options: [automatico, comfort, eco, manuale, spento]
+  hi_clima_fonte_inferiore:
+    name: "Clima Piano inferiore – fonte preferita"
+    icon: mdi:heat-wave
+    options: [auto, pavimento, pompa_di_calore]
+  hi_clima_modo_mansarda:
+    name: "Clima Mansarda – modalità"
+    icon: mdi:thermostat-auto
+    options: [automatico, comfort, eco, manuale, spento]
+  hi_clima_fonte_mansarda:
+    name: "Clima Mansarda – fonte preferita"
+    icon: mdi:heat-wave
+    options: [auto, pavimento, pompa_di_calore]
+
+input_number:
+  hi_clima_inferiore_comfort:
+    name: "Setpoint comfort Piano inferiore"
+    min: 16
+    max: 24
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:sofa
+    mode: box
+  hi_clima_inferiore_eco:
+    name: "Setpoint eco Piano inferiore"
+    min: 14
+    max: 22
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:leaf
+    mode: box
+  hi_clima_inferiore_raffrescamento:
+    name: "Setpoint raffrescamento Piano inferiore"
+    min: 22
+    max: 30
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:snowflake
+    mode: box
+  hi_clima_mansarda_comfort:
+    name: "Setpoint comfort Mansarda"
+    min: 16
+    max: 24
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:sofa
+    mode: box
+  hi_clima_mansarda_eco:
+    name: "Setpoint eco Mansarda"
+    min: 14
+    max: 22
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:leaf
+    mode: box
+  hi_clima_mansarda_raffrescamento:
+    name: "Setpoint raffrescamento Mansarda"
+    min: 22
+    max: 30
+    step: 0.5
+    unit_of_measurement: "°C"
+    icon: mdi:snowflake
+    mode: box
+
+input_boolean:
+  hi_clima_override_inferiore:
+    name: "Override manuale Piano inferiore"
+    icon: mdi:hand-back-right
+  hi_clima_attuazione_pdc_inferiore:
+    name: "Consenso comando pompa di calore Piano inferiore"
+    icon: mdi:heat-pump
+  hi_clima_attuazione_pavimento_inferiore:
+    name: "Consenso comando pavimento Piano inferiore"
+    icon: mdi:heating-coil
+  hi_clima_override_mansarda:
+    name: "Override manuale Mansarda"
+    icon: mdi:hand-back-right
+  hi_clima_attuazione_pdc_mansarda:
+    name: "Consenso comando pompa di calore Mansarda"
+    icon: mdi:heat-pump
+  hi_clima_attuazione_pavimento_mansarda:
+    name: "Consenso comando pavimento Mansarda"
+    icon: mdi:heating-coil
+
+input_text:
+  hi_clima_inferiore_comandato:
+    name: "Ultimo comando clima Piano inferiore"
+    max: 255
+  hi_clima_mansarda_comandato:
+    name: "Ultimo comando clima Mansarda"
+    max: 255
+
+input_datetime:
+  hi_clima_inferiore_feriali_inizio:
+    name: "Comfort Piano inferiore feriali – inizio"
+    has_date: false
+    has_time: true
+  hi_clima_inferiore_feriali_fine:
+    name: "Comfort Piano inferiore feriali – fine"
+    has_date: false
+    has_time: true
+  hi_clima_inferiore_festivi_inizio:
+    name: "Comfort Piano inferiore sabato/festivi – inizio"
+    has_date: false
+    has_time: true
+  hi_clima_inferiore_festivi_fine:
+    name: "Comfort Piano inferiore sabato/festivi – fine"
+    has_date: false
+    has_time: true
+  hi_clima_mansarda_feriali_inizio:
+    name: "Comfort Mansarda feriali – inizio"
+    has_date: false
+    has_time: true
+  hi_clima_mansarda_feriali_fine:
+    name: "Comfort Mansarda feriali – fine"
+    has_date: false
+    has_time: true
+  hi_clima_mansarda_festivi_inizio:
+    name: "Comfort Mansarda sabato/festivi – inizio"
+    has_date: false
+    has_time: true
+  hi_clima_mansarda_festivi_fine:
+    name: "Comfort Mansarda sabato/festivi – fine"
+    has_date: false
+    has_time: true
+
+timer:
+  hi_clima_override_inferiore:
+    name: "Scadenza override Piano inferiore"
+    restore: true
+    icon: mdi:timer-sand
+  hi_clima_override_mansarda:
+    name: "Scadenza override Mansarda"
+    restore: true
+    icon: mdi:timer-sand
+
+sensor:
+  - platform: derivative
+    source: sensor.hi_inferiore_temperatura
+    name: hi_inferiore_variazione
+    unique_id: hi_inferiore_variazione
+    unit_time: h
+    time_window: "00:30:00"
+    round: 2
+  - platform: derivative
+    source: sensor.hi_mansarda_temperatura
+    name: hi_mansarda_variazione
+    unique_id: hi_mansarda_variazione
+    unit_time: h
+    time_window: "00:30:00"
+    round: 2
+
+homeassistant:
+  customize:
+    sensor.hi_inferiore_variazione:
+      friendly_name: "Variazione temperatura Piano inferiore"
+      icon: mdi:chart-line-variant
+    sensor.hi_mansarda_variazione:
+      friendly_name: "Variazione temperatura Mansarda"
+      icon: mdi:chart-line-variant
+
+template:
+  # =========================== ZONA PIANO INFERIORE ===========================
+  - sensor:
+      - name: "Temperatura Piano inferiore"
+        unique_id: hi_inferiore_temperatura
+        default_entity_id: sensor.hi_inferiore_temperatura
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_inferiore') }}"
+        availability: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_inferiore') | is_number }}"
+        attributes:
+          sensori_validi: "{% from 'hi_common.jinja' import hi_validi %}{{ hi_validi('hi_temp_inferiore') }}"
+          sensori: "{% from 'hi_common.jinja' import hi_ruolo %}{{ hi_ruolo('hi_temp_inferiore') | from_json }}"
+      - name: "Umidità Piano inferiore"
+        unique_id: hi_inferiore_umidita
+        default_entity_id: sensor.hi_inferiore_umidita
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_inferiore', 0) }}"
+        availability: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_inferiore', 0) | is_number }}"
+      - name: "Setpoint effettivo Piano inferiore"
+        unique_id: hi_inferiore_setpoint
+        default_entity_id: sensor.hi_inferiore_setpoint
+        unit_of_measurement: "°C"
+        device_class: temperature
+        # Niente "variables" qui: nelle entità a stato le variabili non
+        # registrano le dipendenze e il sensore non si aggiornerebbe.
+        state: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('inferiore') | from_json).setpoint }}"
+        availability: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('inferiore') | from_json).setpoint is number }}"
+        attributes:
+          origine: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('inferiore') | from_json).origine }}"
+  - binary_sensor:
+      - name: "Finestre aperte Piano inferiore"
+        unique_id: hi_inferiore_finestra
+        default_entity_id: binary_sensor.hi_inferiore_finestra
+        device_class: window
+        # Ritardo: brevi aperture non interrompono la climatizzazione.
+        delay_on: {minutes: 2}
+        state: "{% from 'hi_common.jinja' import hi_qualcuno_on %}{{ hi_qualcuno_on('hi_finestra_inferiore') == 'on' }}"
+      - name: "Scostamento manuale Piano inferiore"
+        unique_id: hi_inferiore_scostamento
+        default_entity_id: binary_sensor.hi_inferiore_scostamento
+        icon: mdi:hand-back-right-outline
+        # on se un'unità comandata dal sistema è stata modificata dall'esterno
+        # (app Daikin, telecomando, termostato). Valutato solo con attuazione
+        # attiva e almeno 15 minuti dopo l'ultimo comando (polling cloud).
+        state: >
+          {% from 'hi_common.jinja' import hi_disponibili %}
+          {% set c = states('input_text.hi_clima_inferiore_comandato') %}
+          {% set c = c | from_json if c.startswith('{') else {} %}
+          {% set ts = c.get('ts') | as_datetime if c.get('ts') else none %}
+          {% set ns = namespace(dev=false) %}
+          {% if ts is not none and (now() - ts).total_seconds() > 900 %}
+            {% for e in hi_disponibili('hi_pdc_inferiore') | from_json if c.get('pdc') in ['heat', 'cool', 'off'] %}
+              {% if states(e) != c.pdc %}{% set ns.dev = true %}
+              {% elif c.pdc != 'off' and c.t is number and ((state_attr(e, 'temperature') | float(0)) - c.t) | abs > 0.6 %}{% set ns.dev = true %}{% endif %}
+            {% endfor %}
+            {% for e in hi_disponibili('hi_termostato_inferiore') | from_json if c.get('pav') in ['on', 'off'] %}
+              {% set atteso = c.t if c.pav == 'on' else c.tb %}
+              {% if atteso is number and ((state_attr(e, 'temperature') | float(0)) - atteso) | abs > 0.6 %}{% set ns.dev = true %}{% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.dev }}
+  # Supervisore: rivalutato ogni minuto e a ogni variazione degli ingressi.
+  - triggers:
+      - trigger: time_pattern
+        minutes: "/1"
+      - trigger: state
+        entity_id:
+          - sensor.hi_inferiore_temperatura
+          - sensor.hi_inferiore_setpoint
+          - input_select.hi_clima_stagione
+          - input_select.hi_clima_modo_inferiore
+          - input_select.hi_clima_fonte_inferiore
+          - input_boolean.hi_clima_override_inferiore
+          - binary_sensor.hi_inferiore_finestra
+    sensor:
+      - name: "Supervisore Piano inferiore"
+        unique_id: hi_inferiore_supervisore
+        default_entity_id: sensor.hi_inferiore_supervisore
+        icon: mdi:brain
+        variables:
+          r: "{% from 'hi_clima.jinja' import hi_decidi_zona %}{{ hi_decidi_zona('inferiore', 'sensor.hi_inferiore_supervisore', ['pavimento', 'pompa_di_calore']) | from_json }}"
+        state: "{{ r.stato }}"
+        attributes:
+          pav: "{{ r.pav }}"
+          pdc: "{{ r.pdc }}"
+          motivo: "{{ r.motivo }}"
+          errore: "{{ r.errore }}"
+          attesa: "{{ r.attesa }}"
+          primaria: "{{ r.primaria }}"
+          pav_ultimo: "{{ r.pav_ultimo }}"
+          pav_dal: "{{ r.pav_dal }}"
+          pdc_ultimo: "{{ r.pdc_ultimo }}"
+          pdc_dal: "{{ r.pdc_dal }}"
+          temperatura: "{{ r.temperatura }}"
+          setpoint: "{{ r.setpoint }}"
+          esterna: "{{ r.esterna }}"
+          variazione: "{{ r.variazione }}"
+          pav_disponibile: "{{ r.pav_disponibile }}"
+          pdc_disponibile: "{{ r.pdc_disponibile }}"
+          fonti_previste: "{{ ['pavimento', 'pompa_di_calore'] }}"
+  # =========================== ZONA MANSARDA ===========================
+  - sensor:
+      - name: "Temperatura Mansarda"
+        unique_id: hi_mansarda_temperatura
+        default_entity_id: sensor.hi_mansarda_temperatura
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_mansarda') }}"
+        availability: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_temp_mansarda') | is_number }}"
+        attributes:
+          sensori_validi: "{% from 'hi_common.jinja' import hi_validi %}{{ hi_validi('hi_temp_mansarda') }}"
+          sensori: "{% from 'hi_common.jinja' import hi_ruolo %}{{ hi_ruolo('hi_temp_mansarda') | from_json }}"
+      - name: "Umidità Mansarda"
+        unique_id: hi_mansarda_umidita
+        default_entity_id: sensor.hi_mansarda_umidita
+        unit_of_measurement: "%"
+        device_class: humidity
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_mansarda', 0) }}"
+        availability: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_mansarda', 0) | is_number }}"
+      - name: "Setpoint effettivo Mansarda"
+        unique_id: hi_mansarda_setpoint
+        default_entity_id: sensor.hi_mansarda_setpoint
+        unit_of_measurement: "°C"
+        device_class: temperature
+        # Niente "variables" qui: nelle entità a stato le variabili non
+        # registrano le dipendenze e il sensore non si aggiornerebbe.
+        state: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('mansarda') | from_json).setpoint }}"
+        availability: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('mansarda') | from_json).setpoint is number }}"
+        attributes:
+          origine: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('mansarda') | from_json).origine }}"
+  - binary_sensor:
+      - name: "Finestre aperte Mansarda"
+        unique_id: hi_mansarda_finestra
+        default_entity_id: binary_sensor.hi_mansarda_finestra
+        device_class: window
+        # Ritardo: brevi aperture non interrompono la climatizzazione.
+        delay_on: {minutes: 2}
+        state: "{% from 'hi_common.jinja' import hi_qualcuno_on %}{{ hi_qualcuno_on('hi_finestra_mansarda') == 'on' }}"
+      - name: "Scostamento manuale Mansarda"
+        unique_id: hi_mansarda_scostamento
+        default_entity_id: binary_sensor.hi_mansarda_scostamento
+        icon: mdi:hand-back-right-outline
+        # on se un'unità comandata dal sistema è stata modificata dall'esterno
+        # (app Daikin, telecomando, termostato). Valutato solo con attuazione
+        # attiva e almeno 15 minuti dopo l'ultimo comando (polling cloud).
+        state: >
+          {% from 'hi_common.jinja' import hi_disponibili %}
+          {% set c = states('input_text.hi_clima_mansarda_comandato') %}
+          {% set c = c | from_json if c.startswith('{') else {} %}
+          {% set ts = c.get('ts') | as_datetime if c.get('ts') else none %}
+          {% set ns = namespace(dev=false) %}
+          {% if ts is not none and (now() - ts).total_seconds() > 900 %}
+            {% for e in hi_disponibili('hi_pdc_mansarda') | from_json if c.get('pdc') in ['heat', 'cool', 'off'] %}
+              {% if states(e) != c.pdc %}{% set ns.dev = true %}
+              {% elif c.pdc != 'off' and c.t is number and ((state_attr(e, 'temperature') | float(0)) - c.t) | abs > 0.6 %}{% set ns.dev = true %}{% endif %}
+            {% endfor %}
+            {% for e in hi_disponibili('hi_termostato_mansarda') | from_json if c.get('pav') in ['on', 'off'] %}
+              {% set atteso = c.t if c.pav == 'on' else c.tb %}
+              {% if atteso is number and ((state_attr(e, 'temperature') | float(0)) - atteso) | abs > 0.6 %}{% set ns.dev = true %}{% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.dev }}
+  # Supervisore: rivalutato ogni minuto e a ogni variazione degli ingressi.
+  - triggers:
+      - trigger: time_pattern
+        minutes: "/1"
+      - trigger: state
+        entity_id:
+          - sensor.hi_mansarda_temperatura
+          - sensor.hi_mansarda_setpoint
+          - input_select.hi_clima_stagione
+          - input_select.hi_clima_modo_mansarda
+          - input_select.hi_clima_fonte_mansarda
+          - input_boolean.hi_clima_override_mansarda
+          - binary_sensor.hi_mansarda_finestra
+    sensor:
+      - name: "Supervisore Mansarda"
+        unique_id: hi_mansarda_supervisore
+        default_entity_id: sensor.hi_mansarda_supervisore
+        icon: mdi:brain
+        variables:
+          r: "{% from 'hi_clima.jinja' import hi_decidi_zona %}{{ hi_decidi_zona('mansarda', 'sensor.hi_mansarda_supervisore', ['pavimento', 'pompa_di_calore']) | from_json }}"
+        state: "{{ r.stato }}"
+        attributes:
+          pav: "{{ r.pav }}"
+          pdc: "{{ r.pdc }}"
+          motivo: "{{ r.motivo }}"
+          errore: "{{ r.errore }}"
+          attesa: "{{ r.attesa }}"
+          primaria: "{{ r.primaria }}"
+          pav_ultimo: "{{ r.pav_ultimo }}"
+          pav_dal: "{{ r.pav_dal }}"
+          pdc_ultimo: "{{ r.pdc_ultimo }}"
+          pdc_dal: "{{ r.pdc_dal }}"
+          temperatura: "{{ r.temperatura }}"
+          setpoint: "{{ r.setpoint }}"
+          esterna: "{{ r.esterna }}"
+          variazione: "{{ r.variazione }}"
+          pav_disponibile: "{{ r.pav_disponibile }}"
+          pdc_disponibile: "{{ r.pdc_disponibile }}"
+          fonti_previste: "{{ ['pavimento', 'pompa_di_calore'] }}"
+
+automation:
+  # =========================== ZONA PIANO INFERIORE ===========================
+  - id: hi_clima_attuazione_inferiore
+    alias: "HI · Clima · Attuazione Piano inferiore"
+    description: >-
+      Applica le decisioni del supervisore. Non fa nulla finché il consenso
+      generale e i consensi per fonte sono disattivati (impostazione predefinita).
+    mode: queued
+    max: 3
+    triggers:
+      - trigger: state
+        entity_id: sensor.hi_inferiore_supervisore
+        attribute: pav_ultimo
+      - trigger: state
+        entity_id: sensor.hi_inferiore_supervisore
+        attribute: pdc_ultimo
+      - trigger: state
+        entity_id:
+          - input_boolean.hi_clima_controllo_automatico
+          - input_boolean.hi_clima_attuazione_pdc_inferiore
+          - input_boolean.hi_clima_attuazione_pavimento_inferiore
+        to: "on"
+      - trigger: state
+        entity_id: sensor.hi_inferiore_setpoint
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_clima_controllo_automatico
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+      - condition: template
+        value_template: "{{ states('sensor.hi_inferiore_supervisore') not in ['unknown', 'unavailable', 'manuale', 'sicurezza_sensore'] }}"
+    actions:
+      - action: script.hi_clima_attua
+        data:
+          zona: inferiore
+          pav: "{{ state_attr('sensor.hi_inferiore_supervisore', 'pav') }}"
+          pdc: "{{ state_attr('sensor.hi_inferiore_supervisore', 'pdc') }}"
+
+  - id: hi_clima_rileva_manuale_inferiore
+    alias: "HI · Clima · Rileva intervento manuale Piano inferiore"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_inferiore_scostamento
+        to: "on"
+        for: {minutes: 2}
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_clima_override_inferiore
+        state: "off"
+    actions:
+      - action: input_boolean.turn_on
+        target: {entity_id: input_boolean.hi_clima_override_inferiore}
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_clima_manuale_inferiore
+          titolo: "Clima Piano inferiore: intervento manuale"
+          messaggio: >-
+            Rilevata una modifica manuale. Il controllo automatico è sospeso per
+            {{ states('input_number.hi_clima_override_ore') }} ore.
+
+  - id: hi_clima_override_avvio_inferiore
+    alias: "HI · Clima · Override avviato Piano inferiore"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.hi_clima_override_inferiore
+        from: "off"
+        to: "on"
+    actions:
+      - action: timer.start
+        target: {entity_id: timer.hi_clima_override_inferiore}
+        data:
+          duration: "{{ (states('input_number.hi_clima_override_ore') | float(3) * 3600) | int }}"
+
+  - id: hi_clima_override_fine_inferiore
+    alias: "HI · Clima · Override terminato Piano inferiore"
+    mode: single
+    triggers:
+      - trigger: event
+        event_type: timer.finished
+        event_data: {entity_id: timer.hi_clima_override_inferiore}
+      - trigger: state
+        entity_id: input_boolean.hi_clima_override_inferiore
+        to: "off"
+    actions:
+      - action: input_boolean.turn_off
+        target: {entity_id: input_boolean.hi_clima_override_inferiore}
+      - action: timer.cancel
+        target: {entity_id: timer.hi_clima_override_inferiore}
+
+  - id: hi_clima_allarme_inferiore
+    alias: "HI · Clima · Temperatura fuori limiti Piano inferiore"
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: template
+        value_template: >
+          {% set t = states('sensor.hi_inferiore_temperatura') %}
+          {{ t | is_number and (t | float < states('input_number.hi_clima_allarme_min') | float(12)
+              or t | float > states('input_number.hi_clima_allarme_max') | float(30)) }}
+        for: {minutes: 30}
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_clima_allarme_inferiore
+          titolo: "Temperatura fuori limiti: Piano inferiore"
+          messaggio: "{{ states('sensor.hi_inferiore_temperatura') }} °C (limiti {{ states('input_number.hi_clima_allarme_min') }}–{{ states('input_number.hi_clima_allarme_max') }} °C)."
+      - delay: {hours: 2}
+
+  # =========================== ZONA MANSARDA ===========================
+  - id: hi_clima_attuazione_mansarda
+    alias: "HI · Clima · Attuazione Mansarda"
+    description: >-
+      Applica le decisioni del supervisore. Non fa nulla finché il consenso
+      generale e i consensi per fonte sono disattivati (impostazione predefinita).
+    mode: queued
+    max: 3
+    triggers:
+      - trigger: state
+        entity_id: sensor.hi_mansarda_supervisore
+        attribute: pav_ultimo
+      - trigger: state
+        entity_id: sensor.hi_mansarda_supervisore
+        attribute: pdc_ultimo
+      - trigger: state
+        entity_id:
+          - input_boolean.hi_clima_controllo_automatico
+          - input_boolean.hi_clima_attuazione_pdc_mansarda
+          - input_boolean.hi_clima_attuazione_pavimento_mansarda
+        to: "on"
+      - trigger: state
+        entity_id: sensor.hi_mansarda_setpoint
+        not_from: [unknown, unavailable]
+        not_to: [unknown, unavailable]
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_clima_controllo_automatico
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.hi_sistema_pronto
+        state: "on"
+      - condition: template
+        value_template: "{{ states('sensor.hi_mansarda_supervisore') not in ['unknown', 'unavailable', 'manuale', 'sicurezza_sensore'] }}"
+    actions:
+      - action: script.hi_clima_attua
+        data:
+          zona: mansarda
+          pav: "{{ state_attr('sensor.hi_mansarda_supervisore', 'pav') }}"
+          pdc: "{{ state_attr('sensor.hi_mansarda_supervisore', 'pdc') }}"
+
+  - id: hi_clima_rileva_manuale_mansarda
+    alias: "HI · Clima · Rileva intervento manuale Mansarda"
+    mode: single
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_mansarda_scostamento
+        to: "on"
+        for: {minutes: 2}
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_clima_override_mansarda
+        state: "off"
+    actions:
+      - action: input_boolean.turn_on
+        target: {entity_id: input_boolean.hi_clima_override_mansarda}
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_clima_manuale_mansarda
+          titolo: "Clima Mansarda: intervento manuale"
+          messaggio: >-
+            Rilevata una modifica manuale. Il controllo automatico è sospeso per
+            {{ states('input_number.hi_clima_override_ore') }} ore.
+
+  - id: hi_clima_override_avvio_mansarda
+    alias: "HI · Clima · Override avviato Mansarda"
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_boolean.hi_clima_override_mansarda
+        from: "off"
+        to: "on"
+    actions:
+      - action: timer.start
+        target: {entity_id: timer.hi_clima_override_mansarda}
+        data:
+          duration: "{{ (states('input_number.hi_clima_override_ore') | float(3) * 3600) | int }}"
+
+  - id: hi_clima_override_fine_mansarda
+    alias: "HI · Clima · Override terminato Mansarda"
+    mode: single
+    triggers:
+      - trigger: event
+        event_type: timer.finished
+        event_data: {entity_id: timer.hi_clima_override_mansarda}
+      - trigger: state
+        entity_id: input_boolean.hi_clima_override_mansarda
+        to: "off"
+    actions:
+      - action: input_boolean.turn_off
+        target: {entity_id: input_boolean.hi_clima_override_mansarda}
+      - action: timer.cancel
+        target: {entity_id: timer.hi_clima_override_mansarda}
+
+  - id: hi_clima_allarme_mansarda
+    alias: "HI · Clima · Temperatura fuori limiti Mansarda"
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: template
+        value_template: >
+          {% set t = states('sensor.hi_mansarda_temperatura') %}
+          {{ t | is_number and (t | float < states('input_number.hi_clima_allarme_min') | float(12)
+              or t | float > states('input_number.hi_clima_allarme_max') | float(30)) }}
+        for: {minutes: 30}
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_clima_allarme_mansarda
+          titolo: "Temperatura fuori limiti: Mansarda"
+          messaggio: "{{ states('sensor.hi_mansarda_temperatura') }} °C (limiti {{ states('input_number.hi_clima_allarme_min') }}–{{ states('input_number.hi_clima_allarme_max') }} °C)."
+      - delay: {hours: 2}
+
+script:
+  hi_inizializza_zone:
+    alias: HI · Clima · Predefiniti zone
+    mode: single
+    sequence:
+      # Piano inferiore
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_clima_modo_inferiore}
+        data: {option: automatico}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_clima_fonte_inferiore}
+        data: {option: auto}
+      - action: input_boolean.turn_off
+        target:
+          entity_id:
+            - input_boolean.hi_clima_override_inferiore
+            - input_boolean.hi_clima_attuazione_pdc_inferiore
+            - input_boolean.hi_clima_attuazione_pavimento_inferiore
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_comfort}
+        data: {value: 20.5}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_eco}
+        data: {value: 18.5}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_raffrescamento}
+        data: {value: 26.0}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_inferiore_feriali_inizio}
+        data: {time: "06:30:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_inferiore_feriali_fine}
+        data: {time: "22:30:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_inferiore_festivi_inizio}
+        data: {time: "08:00:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_inferiore_festivi_fine}
+        data: {time: "23:00:00"}
+      # Mansarda
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_clima_modo_mansarda}
+        data: {option: automatico}
+      - action: input_select.select_option
+        target: {entity_id: input_select.hi_clima_fonte_mansarda}
+        data: {option: auto}
+      - action: input_boolean.turn_off
+        target:
+          entity_id:
+            - input_boolean.hi_clima_override_mansarda
+            - input_boolean.hi_clima_attuazione_pdc_mansarda
+            - input_boolean.hi_clima_attuazione_pavimento_mansarda
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_comfort}
+        data: {value: 20.0}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_eco}
+        data: {value: 18.0}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_raffrescamento}
+        data: {value: 26.0}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_mansarda_feriali_inizio}
+        data: {time: "06:30:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_mansarda_feriali_fine}
+        data: {time: "08:00:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_mansarda_festivi_inizio}
+        data: {time: "08:00:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_clima_mansarda_festivi_fine}
+        data: {time: "10:00:00"}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- GENERATO da scripts/hi_tool.py: Piano inferiore. Planimetria schematica provvisoria. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640">
+  <style>
+    .bg { fill: #f4f5f7; }
+    .room rect { fill: #ffffff; stroke: #c5cad3; stroke-width: 3; }
+    .name { font: 600 26px system-ui, -apple-system, Segoe UI, Roboto, sans-serif; fill: #3a4150; }
+    .hint { font: italic 18px system-ui, sans-serif; fill: #9aa1ad; }
+    .wm { font: 600 16px system-ui, sans-serif; fill: #b0563a; letter-spacing: 1px; }
+  </style>
+  <rect class="bg" x="0" y="0" width="1000" height="640" rx="20"/>
+  <g class="room"><rect x="30" y="32" width="550" height="371" rx="14"/><text x="48" y="68" class="name">Zona giorno</text><text x="48" y="92" class="hint">provvisoria</text></g>
+  <g class="room"><rect x="600" y="32" width="370" height="256" rx="14"/><text x="618" y="68" class="name">Cucina</text><text x="618" y="92" class="hint">provvisoria</text></g>
+  <g class="room"><rect x="600" y="307" width="370" height="301" rx="14"/><text x="618" y="343" class="name">Ingresso</text><text x="618" y="367" class="hint">provvisoria</text></g>
+  <g class="room"><rect x="30" y="422" width="550" height="186" rx="14"/><text x="48" y="458" class="name">Servizi</text><text x="48" y="482" class="hint">provvisoria</text></g>
+  <text x="980" y="624" class="wm" text-anchor="end">PLANIMETRIA PROVVISORIA · schema non in scala · sostituibile</text>
+</svg>

@@ -1,0 +1,301 @@
+# =============================================================================
+# FILE GENERATO da scripts/hi_tool.py a partire da inventory/house.yaml.
+# NON MODIFICARE A MANO: modifica il modello e riesegui
+#   python3 scripts/hi_tool.py generate
+# =============================================================================
+title: Clima
+path: clima
+icon: mdi:thermostat
+type: sections
+max_columns: 3
+sections:
+- type: grid
+  cards:
+  - type: heading
+    heading: Impostazioni generali
+    heading_style: title
+    icon: mdi:tune
+  - type: tile
+    entity: input_select.hi_clima_stagione
+    name: Stagione
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_select.hi_profilo_energia
+    name: Profilo
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: sensor.hi_temperatura_esterna
+    name: Esterna
+  - type: tile
+    entity: input_boolean.hi_clima_controllo_automatico
+    name: Controllo automatico (consenso generale)
+    icon: mdi:shield-lock-open
+    tap_action:
+      action: more-info
+  - type: markdown
+    content: '{% if is_state(''input_boolean.hi_clima_controllo_automatico'',''off'') %}<ha-alert alert-type="info">Il
+      supervisore calcola le decisioni ma <b>non comanda</b> i dispositivi: l''attuazione è disattivata.</ha-alert>{%
+      else %}<ha-alert alert-type="warning">Attuazione <b>abilitata</b> per le fonti con consenso attivo.</ha-alert>{%
+      endif %}'
+- type: grid
+  cards:
+  - type: heading
+    heading: Piano inferiore
+    heading_style: title
+    icon: mdi:home-thermometer
+    badges:
+    - type: entity
+      entity: sensor.hi_inferiore_umidita
+      show_state: true
+      show_icon: true
+    - type: entity
+      entity: binary_sensor.hi_inferiore_finestra
+      show_state: false
+      show_icon: true
+      visibility:
+      - condition: state
+        entity: binary_sensor.hi_inferiore_finestra
+        state: 'on'
+  - type: tile
+    entity: sensor.hi_inferiore_temperatura
+    name: Temperatura
+  - type: tile
+    entity: sensor.hi_inferiore_setpoint
+    name: Setpoint effettivo
+  - type: markdown
+    content: "{% set s = 'sensor.hi_inferiore_supervisore' %}**Supervisore:** `{{ states(s) }}`  \nPavimento:\
+      \ **{{ state_attr(s,'pav') }}** · Pompa di calore: **{{ state_attr(s,'pdc') }}**  \n<small>{{ state_attr(s,'motivo')\
+      \ }}{% if has_value('sensor.hi_inferiore_setpoint') %} · origine setpoint: {{ state_attr('sensor.hi_inferiore_setpoint','origine')\
+      \ }}{% endif %}</small>"
+  - type: tile
+    entity: input_select.hi_clima_modo_inferiore
+    name: Modalità zona
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_select.hi_clima_fonte_inferiore
+    name: Fonte preferita
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_boolean.hi_clima_override_inferiore
+    name: Override manuale
+    tap_action:
+      action: toggle
+  - type: tile
+    entity: timer.hi_clima_override_inferiore
+    name: Scadenza override
+    visibility:
+    - condition: state
+      entity: input_boolean.hi_clima_override_inferiore
+      state: 'on'
+  - type: thermostat
+    entity: climate.sim_daikin_inferiore
+    name: '[SIM] Pompa di calore'
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'on'
+  - type: markdown
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'off'
+    content: '<ha-alert alert-type="info">Pompa di calore: <b>non ancora disponibile</b> (nessun dispositivo
+      reale con etichetta <code>hi_pdc_inferiore</code>).</ha-alert>'
+  - type: thermostat
+    entity: climate.sim_termostato_inferiore
+    name: '[SIM] Termostato pavimento'
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'on'
+  - type: markdown
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'off'
+    content: '<ha-alert alert-type="info">Termostato pavimento: <b>non ancora disponibile</b> (nessun
+      dispositivo reale con etichetta <code>hi_termostato_inferiore</code>).</ha-alert>'
+  - type: entities
+    title: Programma e setpoint
+    state_color: true
+    entities:
+    - input_number.hi_clima_inferiore_comfort
+    - input_number.hi_clima_inferiore_eco
+    - input_number.hi_clima_inferiore_raffrescamento
+    - input_datetime.hi_clima_inferiore_feriali_inizio
+    - input_datetime.hi_clima_inferiore_feriali_fine
+    - input_datetime.hi_clima_inferiore_festivi_inizio
+    - input_datetime.hi_clima_inferiore_festivi_fine
+  - type: entities
+    title: Consensi all'attuazione
+    state_color: true
+    entities:
+    - entity: input_boolean.hi_clima_attuazione_pdc_inferiore
+      name: Comando pompa di calore
+    - entity: input_boolean.hi_clima_attuazione_pavimento_inferiore
+      name: Comando pavimento (termostato)
+    - entity: input_text.hi_clima_inferiore_comandato
+      name: Ultimo comando
+  - type: history-graph
+    title: Ultime 24 ore
+    hours_to_show: 24
+    entities:
+    - entity: sensor.hi_inferiore_temperatura
+      name: Temperatura
+    - entity: sensor.hi_inferiore_setpoint
+      name: Setpoint
+    - entity: sensor.hi_inferiore_supervisore
+      name: Decisione
+- type: grid
+  cards:
+  - type: heading
+    heading: Mansarda
+    heading_style: title
+    icon: mdi:home-thermometer
+    badges:
+    - type: entity
+      entity: sensor.hi_mansarda_umidita
+      show_state: true
+      show_icon: true
+    - type: entity
+      entity: binary_sensor.hi_mansarda_finestra
+      show_state: false
+      show_icon: true
+      visibility:
+      - condition: state
+        entity: binary_sensor.hi_mansarda_finestra
+        state: 'on'
+  - type: tile
+    entity: sensor.hi_mansarda_temperatura
+    name: Temperatura
+  - type: tile
+    entity: sensor.hi_mansarda_setpoint
+    name: Setpoint effettivo
+  - type: markdown
+    content: "{% set s = 'sensor.hi_mansarda_supervisore' %}**Supervisore:** `{{ states(s) }}`  \nPavimento:\
+      \ **{{ state_attr(s,'pav') }}** · Pompa di calore: **{{ state_attr(s,'pdc') }}**  \n<small>{{ state_attr(s,'motivo')\
+      \ }}{% if has_value('sensor.hi_mansarda_setpoint') %} · origine setpoint: {{ state_attr('sensor.hi_mansarda_setpoint','origine')\
+      \ }}{% endif %}</small>"
+  - type: tile
+    entity: input_select.hi_clima_modo_mansarda
+    name: Modalità zona
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_select.hi_clima_fonte_mansarda
+    name: Fonte preferita
+    features:
+    - type: select-options
+    features_position: bottom
+  - type: tile
+    entity: input_boolean.hi_clima_override_mansarda
+    name: Override manuale
+    tap_action:
+      action: toggle
+  - type: tile
+    entity: timer.hi_clima_override_mansarda
+    name: Scadenza override
+    visibility:
+    - condition: state
+      entity: input_boolean.hi_clima_override_mansarda
+      state: 'on'
+  - type: thermostat
+    entity: climate.sim_daikin_mansarda
+    name: '[SIM] Pompa di calore'
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'on'
+  - type: markdown
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'off'
+    content: '<ha-alert alert-type="info">Pompa di calore: <b>non ancora disponibile</b> (nessun dispositivo
+      reale con etichetta <code>hi_pdc_mansarda</code>).</ha-alert>'
+  - type: thermostat
+    entity: climate.sim_termostato_mansarda
+    name: '[SIM] Termostato pavimento'
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'on'
+  - type: markdown
+    visibility:
+    - condition: state
+      entity: binary_sensor.hi_ambiente_simulazione
+      state: 'off'
+    content: '<ha-alert alert-type="info">Termostato pavimento: <b>non ancora disponibile</b> (nessun
+      dispositivo reale con etichetta <code>hi_termostato_mansarda</code>).</ha-alert>'
+  - type: entities
+    title: Programma e setpoint
+    state_color: true
+    entities:
+    - input_number.hi_clima_mansarda_comfort
+    - input_number.hi_clima_mansarda_eco
+    - input_number.hi_clima_mansarda_raffrescamento
+    - input_datetime.hi_clima_mansarda_feriali_inizio
+    - input_datetime.hi_clima_mansarda_feriali_fine
+    - input_datetime.hi_clima_mansarda_festivi_inizio
+    - input_datetime.hi_clima_mansarda_festivi_fine
+  - type: entities
+    title: Consensi all'attuazione
+    state_color: true
+    entities:
+    - entity: input_boolean.hi_clima_attuazione_pdc_mansarda
+      name: Comando pompa di calore
+    - entity: input_boolean.hi_clima_attuazione_pavimento_mansarda
+      name: Comando pavimento (termostato)
+    - entity: input_text.hi_clima_mansarda_comandato
+      name: Ultimo comando
+  - type: history-graph
+    title: Ultime 24 ore
+    hours_to_show: 24
+    entities:
+    - entity: sensor.hi_mansarda_temperatura
+      name: Temperatura
+    - entity: sensor.hi_mansarda_setpoint
+      name: Setpoint
+    - entity: sensor.hi_mansarda_supervisore
+      name: Decisione
+- type: grid
+  cards:
+  - type: heading
+    heading: Parametri del supervisore
+    heading_style: subtitle
+    icon: mdi:cog
+  - type: entities
+    state_color: true
+    entities:
+    - input_number.hi_clima_isteresi
+    - input_number.hi_clima_soglia_boost
+    - input_number.hi_clima_pav_min_on
+    - input_number.hi_clima_pav_min_off
+    - input_number.hi_clima_pdc_min_on
+    - input_number.hi_clima_pdc_min_off
+    - input_number.hi_clima_pdc_min_esterna
+    - input_number.hi_clima_boost_dopo_min
+    - input_number.hi_clima_variazione_min
+    - input_number.hi_clima_inerzia_ore
+    - type: section
+      label: Setpoint globali
+    - input_number.hi_clima_assenza
+    - input_number.hi_clima_vacanza
+    - input_number.hi_clima_raffr_assenza
+    - input_number.hi_clima_pavimento_setback
+    - type: section
+      label: Sicurezza e allarmi
+    - input_number.hi_clima_t_min_sicurezza
+    - input_number.hi_clima_t_max_sicurezza
+    - input_number.hi_clima_allarme_min
+    - input_number.hi_clima_allarme_max
+    - input_number.hi_clima_override_ore

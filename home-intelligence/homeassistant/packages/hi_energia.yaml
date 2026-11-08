@@ -1,0 +1,481 @@
+# =============================================================================
+# HOME INTELLIGENCE – Energia (indipendente dal produttore dell'inverter)
+# =============================================================================
+# I sensori "hi_en_*" sono PROXY: leggono i sensori reali tramite etichette di
+# ruolo (hi_en_pv_potenza, hi_en_rete_prelievo_potenza, …) e normalizzano le
+# unità:   potenza → W   |   energia → kWh   |   stato di carica → %
+#          capacità accumulo → kWh (parametro, non misura)
+#
+# Nessun valore fittizio: se il ruolo non è associato a un sensore valido, il
+# proxy è "non disponibile". I valori derivati (consumo casa, autoconsumo) sono
+# calcolati solo se tutti gli ingressi necessari sono disponibili.
+#
+# Energy Dashboard nativa: configurare i sensori ORIGINALI dell'inverter/
+# contatore (statistiche più affidabili); i proxy servono a dashboard e logiche.
+# Vedi docs/energia.md.
+# =============================================================================
+
+homeassistant:
+  customize:
+    sensor.hi_en_autoconsumo_energia:
+      friendly_name: Autoconsumo energia
+    sensor.hi_en_casa_energia:
+      friendly_name: Consumo casa energia
+    sensor.hi_en_prelievo_oggi:
+      friendly_name: Prelievo oggi
+    sensor.hi_en_immissione_oggi:
+      friendly_name: Immissione oggi
+    sensor.hi_en_pv_oggi:
+      friendly_name: Produzione FV oggi
+    sensor.hi_en_autoconsumo_oggi:
+      friendly_name: Autoconsumo oggi
+    sensor.hi_en_prelievo_mese:
+      friendly_name: Prelievo mese
+    sensor.hi_en_immissione_mese:
+      friendly_name: Immissione mese
+    sensor.hi_en_pv_mese:
+      friendly_name: Produzione FV mese
+
+input_boolean:
+  hi_en_inverti_segno_rete:
+    name: Inverti segno potenza rete netta
+    icon: mdi:swap-vertical
+  hi_en_inverti_segno_batteria:
+    name: Inverti segno potenza batteria netta
+    icon: mdi:swap-vertical
+  hi_en_gestione_carichi:
+    name: Suggerimenti gestione carichi (predisposto)
+    icon: mdi:lightbulb-on-outline
+
+input_number:
+  hi_en_batt_capacita:
+    name: Capacità utile batteria (0 = non configurata)
+    min: 0
+    max: 30
+    step: 0.1
+    unit_of_measurement: kWh
+    icon: mdi:battery-high
+    mode: box
+  hi_en_prezzo_acquisto:
+    name: Prezzo energia acquistata (0 = non configurato)
+    min: 0
+    max: 1
+    step: 0.001
+    unit_of_measurement: "EUR/kWh"
+    icon: mdi:cash-minus
+    mode: box
+  hi_en_prezzo_vendita:
+    name: Prezzo energia immessa (0 = non configurato)
+    min: 0
+    max: 1
+    step: 0.001
+    unit_of_measurement: "EUR/kWh"
+    icon: mdi:cash-plus
+    mode: box
+  hi_en_soglia_surplus:
+    name: Soglia surplus fotovoltaico
+    min: 100
+    max: 6000
+    step: 100
+    unit_of_measurement: W
+    icon: mdi:solar-power
+    mode: box
+  hi_en_soglia_prelievo:
+    name: Soglia prelievo elevato (0 = disattivata)
+    min: 0
+    max: 15000
+    step: 100
+    unit_of_measurement: W
+    icon: mdi:transmission-tower-import
+    mode: box
+
+template:
+  - sensor:
+      # ----------------------------------------------------------- POTENZE (W)
+      - name: FV potenza
+        unique_id: hi_en_pv_potenza
+        default_entity_id: sensor.hi_en_pv_potenza
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_potenza_w %}{{ [hi_potenza_w('hi_en_pv_potenza') | float(0), 0] | max }}"
+        availability: "{% from 'hi_common.jinja' import hi_potenza_w %}{{ hi_potenza_w('hi_en_pv_potenza') | is_number }}"
+
+      - name: Rete prelievo potenza
+        unique_id: hi_en_rete_prelievo
+        default_entity_id: sensor.hi_en_rete_prelievo
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {% set p = hi_potenza_w('hi_en_rete_prelievo_potenza') %}
+          {% if p | is_number %}{{ p }}
+          {% else %}{% set n = hi_potenza_w('hi_en_rete_potenza_netta') | float(0) %}
+          {% set n = -n if is_state('input_boolean.hi_en_inverti_segno_rete', 'on') else n %}{{ [n, 0] | max }}{% endif %}
+        availability: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {{ hi_potenza_w('hi_en_rete_prelievo_potenza') | is_number or hi_potenza_w('hi_en_rete_potenza_netta') | is_number }}
+
+      - name: Rete immissione potenza
+        unique_id: hi_en_rete_immissione
+        default_entity_id: sensor.hi_en_rete_immissione
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {% set p = hi_potenza_w('hi_en_rete_immissione_potenza') %}
+          {% if p | is_number %}{{ p }}
+          {% else %}{% set n = hi_potenza_w('hi_en_rete_potenza_netta') | float(0) %}
+          {% set n = -n if is_state('input_boolean.hi_en_inverti_segno_rete', 'on') else n %}{{ [-n, 0] | max }}{% endif %}
+        availability: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {{ hi_potenza_w('hi_en_rete_immissione_potenza') | is_number or hi_potenza_w('hi_en_rete_potenza_netta') | is_number }}
+
+      - name: Batteria potenza carica
+        unique_id: hi_en_batt_carica
+        default_entity_id: sensor.hi_en_batt_carica
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {% set p = hi_potenza_w('hi_en_batt_carica_potenza') %}
+          {% if p | is_number %}{{ p }}
+          {% else %}{% set n = hi_potenza_w('hi_en_batt_potenza_netta') | float(0) %}
+          {% set n = -n if is_state('input_boolean.hi_en_inverti_segno_batteria', 'on') else n %}{{ [-n, 0] | max }}{% endif %}
+        availability: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {{ hi_potenza_w('hi_en_batt_carica_potenza') | is_number or hi_potenza_w('hi_en_batt_potenza_netta') | is_number }}
+
+      - name: Batteria potenza scarica
+        unique_id: hi_en_batt_scarica
+        default_entity_id: sensor.hi_en_batt_scarica
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {% set p = hi_potenza_w('hi_en_batt_scarica_potenza') %}
+          {% if p | is_number %}{{ p }}
+          {% else %}{% set n = hi_potenza_w('hi_en_batt_potenza_netta') | float(0) %}
+          {% set n = -n if is_state('input_boolean.hi_en_inverti_segno_batteria', 'on') else n %}{{ [n, 0] | max }}{% endif %}
+        availability: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {{ hi_potenza_w('hi_en_batt_scarica_potenza') | is_number or hi_potenza_w('hi_en_batt_potenza_netta') | is_number }}
+
+      - name: Batteria stato di carica
+        unique_id: hi_en_batt_soc
+        default_entity_id: sensor.hi_en_batt_soc
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+        state: "{% from 'hi_common.jinja' import hi_percentuale %}{{ hi_percentuale('hi_en_batt_soc') }}"
+        availability: "{% from 'hi_common.jinja' import hi_percentuale %}{{ hi_percentuale('hi_en_batt_soc') | is_number }}"
+
+      - name: Batteria energia residua
+        unique_id: hi_en_batt_residua
+        default_entity_id: sensor.hi_en_batt_residua
+        unit_of_measurement: kWh
+        device_class: energy_storage
+        state_class: measurement
+        state: "{{ (states('sensor.hi_en_batt_soc') | float(0) / 100 * states('input_number.hi_en_batt_capacita') | float(0)) | round(2) }}"
+        availability: "{{ has_value('sensor.hi_en_batt_soc') and states('input_number.hi_en_batt_capacita') | float(0) > 0 }}"
+
+      # Consumo casa: misurato se esiste il ruolo, altrimenti bilancio
+      #   casa = FV + prelievo − immissione + scarica − carica
+      - name: Consumo casa potenza
+        unique_id: hi_en_casa_potenza
+        default_entity_id: sensor.hi_en_casa_potenza
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: >
+          {% from 'hi_common.jinja' import hi_potenza_w %}
+          {% set m = hi_potenza_w('hi_en_casa_potenza') %}
+          {% if m | is_number %}{{ m }}
+          {% else %}
+            {{ [states('sensor.hi_en_pv_potenza') | float(0) + states('sensor.hi_en_rete_prelievo') | float(0)
+                - states('sensor.hi_en_rete_immissione') | float(0) + states('sensor.hi_en_batt_scarica') | float(0)
+                - states('sensor.hi_en_batt_carica') | float(0), 0] | max | round(0) }}
+          {% endif %}
+        availability: >
+          {% from 'hi_common.jinja' import hi_potenza_w, hi_ruolo %}
+          {% set batt_conf = (hi_ruolo('hi_en_batt_potenza_netta') | from_json | count + hi_ruolo('hi_en_batt_carica_potenza') | from_json | count) > 0 %}
+          {{ hi_potenza_w('hi_en_casa_potenza') | is_number
+             or (has_value('sensor.hi_en_pv_potenza') and has_value('sensor.hi_en_rete_prelievo') and has_value('sensor.hi_en_rete_immissione')
+                 and (not batt_conf or (has_value('sensor.hi_en_batt_carica') and has_value('sensor.hi_en_batt_scarica')))) }}
+        attributes:
+          origine: >
+            {% from 'hi_common.jinja' import hi_potenza_w %}
+            {{ 'misurato' if hi_potenza_w('hi_en_casa_potenza') | is_number else 'calcolato (bilancio)' }}
+
+      # Autoconsumo istantaneo = produzione FV non immessa in rete
+      - name: Autoconsumo potenza
+        unique_id: hi_en_autoconsumo
+        default_entity_id: sensor.hi_en_autoconsumo
+        unit_of_measurement: W
+        device_class: power
+        state_class: measurement
+        state: "{{ [states('sensor.hi_en_pv_potenza') | float(0) - states('sensor.hi_en_rete_immissione') | float(0), 0] | max | round(0) }}"
+        availability: "{{ has_value('sensor.hi_en_pv_potenza') and has_value('sensor.hi_en_rete_immissione') }}"
+
+      - name: Autosufficienza istantanea
+        unique_id: hi_en_autosufficienza
+        default_entity_id: sensor.hi_en_autosufficienza
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:home-battery
+        state: >
+          {% set c = states('sensor.hi_en_casa_potenza') | float(0) %}
+          {% set g = states('sensor.hi_en_rete_prelievo') | float(0) %}
+          {{ (100 if c <= 0 else [[(c - g) / c * 100, 0] | max, 100] | min) | round(0) }}
+        availability: "{{ has_value('sensor.hi_en_casa_potenza') and has_value('sensor.hi_en_rete_prelievo') }}"
+
+      # ---------------------------------------------------------- ENERGIE (kWh)
+      - name: FV energia prodotta
+        unique_id: hi_en_pv_energia
+        default_entity_id: sensor.hi_en_pv_energia
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_pv_energia') }}"
+        availability: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_pv_energia') | is_number }}"
+
+      - name: Rete energia prelevata
+        unique_id: hi_en_rete_prelievo_energia
+        default_entity_id: sensor.hi_en_rete_prelievo_energia
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_rete_prelievo_energia') }}"
+        availability: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_rete_prelievo_energia') | is_number }}"
+
+      - name: Rete energia immessa
+        unique_id: hi_en_rete_immissione_energia
+        default_entity_id: sensor.hi_en_rete_immissione_energia
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_rete_immissione_energia') }}"
+        availability: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_rete_immissione_energia') | is_number }}"
+
+      - name: Batteria energia caricata
+        unique_id: hi_en_batt_energia_carica
+        default_entity_id: sensor.hi_en_batt_energia_carica
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_batt_energia_carica') }}"
+        availability: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_batt_energia_carica') | is_number }}"
+
+      - name: Batteria energia scaricata
+        unique_id: hi_en_batt_energia_scarica
+        default_entity_id: sensor.hi_en_batt_energia_scarica
+        unit_of_measurement: kWh
+        device_class: energy
+        state_class: total_increasing
+        state: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_batt_energia_scarica') }}"
+        availability: "{% from 'hi_common.jinja' import hi_energia_kwh %}{{ hi_energia_kwh('hi_en_batt_energia_scarica') | is_number }}"
+
+      # ------------------------------------------------- INDICATORI ECONOMICI
+      - name: Costo energia oggi
+        unique_id: hi_en_costo_oggi
+        default_entity_id: sensor.hi_en_costo_oggi
+        unit_of_measurement: EUR
+        device_class: monetary
+        icon: mdi:cash-minus
+        state: "{{ (states('sensor.hi_en_prelievo_oggi') | float(0) * states('input_number.hi_en_prezzo_acquisto') | float(0)) | round(2) }}"
+        availability: "{{ has_value('sensor.hi_en_prelievo_oggi') and states('input_number.hi_en_prezzo_acquisto') | float(0) > 0 }}"
+
+      - name: Ricavo immissione oggi
+        unique_id: hi_en_ricavo_oggi
+        default_entity_id: sensor.hi_en_ricavo_oggi
+        unit_of_measurement: EUR
+        device_class: monetary
+        icon: mdi:cash-plus
+        state: "{{ (states('sensor.hi_en_immissione_oggi') | float(0) * states('input_number.hi_en_prezzo_vendita') | float(0)) | round(2) }}"
+        availability: "{{ has_value('sensor.hi_en_immissione_oggi') and states('input_number.hi_en_prezzo_vendita') | float(0) > 0 }}"
+
+      - name: Risparmio autoconsumo oggi
+        unique_id: hi_en_risparmio_oggi
+        default_entity_id: sensor.hi_en_risparmio_oggi
+        unit_of_measurement: EUR
+        device_class: monetary
+        icon: mdi:piggy-bank
+        state: "{{ (states('sensor.hi_en_autoconsumo_oggi') | float(0) * states('input_number.hi_en_prezzo_acquisto') | float(0)) | round(2) }}"
+        availability: "{{ has_value('sensor.hi_en_autoconsumo_oggi') and states('input_number.hi_en_prezzo_acquisto') | float(0) > 0 }}"
+
+      # ------------------------------------- OTTIMIZZAZIONE (predisposta)
+      # Solo indicazione: nessun carico viene comandato in questa versione.
+      - name: Consiglio energetico
+        unique_id: hi_en_consiglio
+        default_entity_id: sensor.hi_en_consiglio
+        icon: mdi:lightbulb-auto
+        state: >
+          {% if not has_value('sensor.hi_en_pv_potenza') and not has_value('sensor.hi_en_rete_prelievo') %}non_configurato
+          {% elif is_state('binary_sensor.hi_en_prelievo_elevato', 'on') %}riduci_consumi
+          {% elif is_state('binary_sensor.hi_en_surplus_fv', 'on') %}usa_surplus
+          {% elif has_value('sensor.hi_en_batt_soc') and states('sensor.hi_en_batt_soc') | float(0) < 20 %}preserva_batteria
+          {% else %}neutro{% endif %}
+        attributes:
+          descrizione: >
+            {{ {'non_configurato': 'Impianto energetico non ancora integrato',
+                'riduci_consumi': 'Prelievo dalla rete oltre soglia: evitare nuovi carichi',
+                'usa_surplus': 'Surplus fotovoltaico: momento adatto per carichi programmabili',
+                'preserva_batteria': 'Batteria bassa: rimandare i carichi non urgenti',
+                'neutro': 'Nessuna indicazione particolare'}.get(this.state, '') }}
+
+  - binary_sensor:
+      - name: Surplus fotovoltaico
+        unique_id: hi_en_surplus_fv
+        default_entity_id: binary_sensor.hi_en_surplus_fv
+        icon: mdi:solar-power-variant
+        delay_on: {minutes: 10}
+        delay_off: {minutes: 5}
+        state: "{{ states('sensor.hi_en_rete_immissione') | float(0) > states('input_number.hi_en_soglia_surplus') | float(1500) }}"
+        availability: "{{ has_value('sensor.hi_en_rete_immissione') }}"
+      - name: Prelievo elevato
+        unique_id: hi_en_prelievo_elevato
+        default_entity_id: binary_sensor.hi_en_prelievo_elevato
+        icon: mdi:alert-octagon
+        delay_on: {minutes: 2}
+        delay_off: {minutes: 2}
+        state: >
+          {% set s = states('input_number.hi_en_soglia_prelievo') | float(0) %}
+          {{ s > 0 and states('sensor.hi_en_rete_prelievo') | float(0) > s }}
+        availability: "{{ has_value('sensor.hi_en_rete_prelievo') }}"
+
+# Energie derivate (integrazione di Riemann sui proxy di potenza).
+sensor:
+  - platform: integration
+    source: sensor.hi_en_autoconsumo
+    name: hi_en_autoconsumo_energia
+    unique_id: hi_en_autoconsumo_energia
+    unit_prefix: k
+    unit_time: h
+    method: left
+    round: 3
+    max_sub_interval:
+      minutes: 5
+  - platform: integration
+    source: sensor.hi_en_casa_potenza
+    name: hi_en_casa_energia
+    unique_id: hi_en_casa_energia
+    unit_prefix: k
+    unit_time: h
+    method: left
+    round: 3
+    max_sub_interval:
+      minutes: 5
+
+utility_meter:
+  hi_en_prelievo_oggi:
+    name: hi_en_prelievo_oggi
+    unique_id: hi_en_prelievo_oggi
+    source: sensor.hi_en_rete_prelievo_energia
+    cycle: daily
+  hi_en_immissione_oggi:
+    name: hi_en_immissione_oggi
+    unique_id: hi_en_immissione_oggi
+    source: sensor.hi_en_rete_immissione_energia
+    cycle: daily
+  hi_en_pv_oggi:
+    name: hi_en_pv_oggi
+    unique_id: hi_en_pv_oggi
+    source: sensor.hi_en_pv_energia
+    cycle: daily
+  hi_en_autoconsumo_oggi:
+    name: hi_en_autoconsumo_oggi
+    unique_id: hi_en_autoconsumo_oggi
+    source: sensor.hi_en_autoconsumo_energia
+    cycle: daily
+  hi_en_prelievo_mese:
+    name: hi_en_prelievo_mese
+    unique_id: hi_en_prelievo_mese
+    source: sensor.hi_en_rete_prelievo_energia
+    cycle: monthly
+  hi_en_immissione_mese:
+    name: hi_en_immissione_mese
+    unique_id: hi_en_immissione_mese
+    source: sensor.hi_en_rete_immissione_energia
+    cycle: monthly
+  hi_en_pv_mese:
+    name: hi_en_pv_mese
+    unique_id: hi_en_pv_mese
+    source: sensor.hi_en_pv_energia
+    cycle: monthly
+
+script:
+  hi_energia_parametri_predefiniti:
+    alias: HI · Energia · Parametri predefiniti
+    icon: mdi:restore
+    mode: single
+    sequence:
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_en_soglia_surplus}
+        data: {value: 1500}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_en_soglia_prelievo}
+        data: {value: 0}
+
+automation:
+  - id: hi_energia_prelievo_elevato
+    alias: HI · Energia · Prelievo elevato
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_en_prelievo_elevato
+        from: "off"
+        to: "on"
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: importante
+          id: hi_en_prelievo_elevato
+          titolo: Prelievo elevato dalla rete
+          messaggio: "Prelievo attuale {{ states('sensor.hi_en_rete_prelievo') }} W (soglia {{ states('input_number.hi_en_soglia_prelievo') | int }} W)."
+      - delay: {minutes: 30}
+
+  - id: hi_energia_fv_assente
+    alias: HI · Energia · Produzione FV assente di giorno
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: template
+        value_template: >
+          {{ has_value('sensor.hi_en_pv_potenza') and state_attr('sun.sun', 'elevation') | float(0) > 30
+             and states('sensor.hi_en_pv_potenza') | float(0) < 50 }}
+        for: {hours: 1}
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_en_fv_assente
+          titolo: Produzione fotovoltaica assente
+          messaggio: Sole alto da oltre un'ora ma produzione quasi nulla. Verificare inverter o meteo.
+      - delay: {hours: 6}
+
+  - id: hi_energia_suggerimento_surplus
+    alias: HI · Energia · Suggerimento surplus (predisposto)
+    mode: single
+    max_exceeded: silent
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.hi_en_surplus_fv
+        from: "off"
+        to: "on"
+    conditions:
+      - condition: state
+        entity_id: input_boolean.hi_en_gestione_carichi
+        state: "on"
+    actions:
+      - action: script.hi_notifica
+        data:
+          livello: info
+          id: hi_en_surplus
+          titolo: Surplus fotovoltaico
+          messaggio: "Immissione in rete {{ states('sensor.hi_en_rete_immissione') }} W: momento adatto per avviare elettrodomestici."
+      - delay: {hours: 2}

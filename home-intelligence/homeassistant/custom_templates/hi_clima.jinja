@@ -1,0 +1,286 @@
+{#- ==========================================================================
+    HOME INTELLIGENCE – Supervisore termico (logica a regole, isteresi, tempi
+    minimi, priorità). Separato dalle integrazioni: produce DECISIONI, non
+    comanda dispositivi. L'attuazione è in script.hi_clima_attua ed è
+    disattivata per impostazione predefinita.
+
+    Due livelli:
+      hi_calcola_setpoint(i) / hi_decidi(i)  -> funzioni PURE (input = dict),
+                                               testate con tests/test_clima_*.py
+      hi_setpoint_zona(z) / hi_decidi_zona() -> leggono gli helper della zona
+                                               e chiamano le funzioni pure.
+
+    Valori delle decisioni:
+      pav: on | off | invariato        (pavimento radiante via termostato)
+      pdc: heat | cool | off | invariato (pompa di calore Daikin)
+    "invariato" = nessun comando (fail-safe).
+    ========================================================================== -#}
+
+{#- --------------------------------------------------------------------------
+    Setpoint effettivo (funzione pura)
+    i: stagione, modo, modo_casa, profilo, in_programma, comfort, eco,
+       raffrescamento, assenza, vacanza, raffr_assenza
+    -------------------------------------------------------------------------- -#}
+{%- macro hi_calcola_setpoint(i) -%}
+{%- set ns = namespace(t=none, o='') -%}
+{%- if i.stagione not in ['inverno', 'estate'] -%}
+  {%- set ns.o = 'stagione spenta' -%}
+{%- elif i.modo == 'spento' -%}
+  {%- set ns.o = 'zona spenta' -%}
+{%- elif i.modo == 'manuale' -%}
+  {%- set ns.o = 'controllo manuale' -%}
+{%- elif i.stagione == 'inverno' -%}
+  {%- if i.modo == 'comfort' -%}{%- set ns.t = i.comfort -%}{%- set ns.o = 'comfort (forzato)' -%}
+  {%- elif i.modo == 'eco' -%}{%- set ns.t = i.eco -%}{%- set ns.o = 'eco (forzato)' -%}
+  {%- elif i.modo_casa == 'Vacanza' -%}{%- set ns.t = i.vacanza -%}{%- set ns.o = 'vacanza' -%}
+  {%- elif i.modo_casa == 'Assente' -%}{%- set ns.t = i.assenza -%}{%- set ns.o = 'assenza' -%}
+  {%- elif i.modo_casa == 'Notte' -%}{%- set ns.t = i.eco -%}{%- set ns.o = 'notte (eco)' -%}
+  {%- elif i.profilo == 'comfort' -%}{%- set ns.t = i.comfort -%}{%- set ns.o = 'profilo comfort' -%}
+  {%- elif i.profilo == 'risparmio' -%}{%- set ns.t = i.eco -%}{%- set ns.o = 'profilo risparmio' -%}
+  {%- elif i.in_programma -%}{%- set ns.t = i.comfort -%}{%- set ns.o = 'programma: comfort' -%}
+  {%- else -%}{%- set ns.t = i.eco -%}{%- set ns.o = 'programma: eco' -%}
+  {%- endif -%}
+{%- else -%}
+  {%- if i.modo_casa in ['Assente', 'Vacanza'] -%}{%- set ns.t = i.raffr_assenza -%}{%- set ns.o = 'estate: casa vuota' -%}
+  {%- elif i.modo == 'eco' or i.profilo == 'risparmio' -%}{%- set ns.t = i.raffrescamento + 1 -%}{%- set ns.o = 'estate: eco (+1 °C)' -%}
+  {%- else -%}{%- set ns.t = i.raffrescamento -%}{%- set ns.o = 'estate: comfort' -%}
+  {%- endif -%}
+{%- endif -%}
+{{- {'setpoint': ns.t, 'origine': ns.o} | to_json -}}
+{%- endmacro -%}
+
+{#- --------------------------------------------------------------------------
+    Decisione (funzione pura)
+    i: stagione, modo, override, temp, setpoint, variazione, esterna, finestra,
+       fonte (auto|pavimento|pompa_di_calore), disp_pav, disp_pdc,
+       pav_prec, pdc_prec, pav_min_da, pdc_min_da (minuti dall'ultimo cambio),
+       par: {isteresi, soglia_boost, pav_min_on, pav_min_off, pdc_min_on,
+             pdc_min_off, pdc_min_esterna, t_min_sic, t_max_sic,
+             boost_dopo_min, variazione_min, inerzia_ore}
+    -------------------------------------------------------------------------- -#}
+{%- macro hi_decidi(i) -%}
+{%- set p = i.par -%}
+{%- set t = i.temp if i.temp is number else none -%}
+{%- set sp = i.setpoint if i.setpoint is number else none -%}
+{%- set est = i.esterna if i.esterna is number else none -%}
+{%- set var = i.variazione if i.variazione is number else none -%}
+{%- set pav_prec = i.pav_prec if i.pav_prec in ['on', 'off'] else 'off' -%}
+{%- set pdc_prec = i.pdc_prec if i.pdc_prec in ['heat', 'cool', 'off'] else 'off' -%}
+{%- set r = namespace(stato='', pav='invariato', pdc='invariato', motivo='', immediato=false, attesa=false, primaria='', errore=none) -%}
+
+{%- if i.stagione not in ['inverno', 'estate'] or i.modo == 'spento' -%}
+  {%- set r.stato = 'spento' -%}
+  {%- set r.pav = 'off' if i.disp_pav else 'invariato' -%}
+  {%- set r.pdc = 'off' if i.disp_pdc else 'invariato' -%}
+  {%- set r.motivo = 'Climatizzazione spenta per la zona o per la stagione' -%}
+  {%- set r.immediato = true -%}
+{%- elif i.override or i.modo == 'manuale' -%}
+  {%- set r.stato = 'manuale' -%}
+  {%- set r.motivo = 'Override o modalità manuale: nessun comando automatico' -%}
+  {%- set r.immediato = true -%}
+{%- elif t is none or sp is none -%}
+  {%- set r.stato = 'sicurezza_sensore' -%}
+  {%- set r.motivo = 'Temperatura o setpoint non disponibili: nessun comando (fail-safe)' -%}
+  {%- set r.immediato = true -%}
+{%- elif i.stagione == 'inverno' -%}
+  {%- set err = sp - t -%}
+  {%- set r.errore = err | round(2) -%}
+  {%- set pdc_ok = i.disp_pdc and (est is none or est >= p.pdc_min_esterna) -%}
+  {%- set pav_ok = i.disp_pav -%}
+  {%- if i.fonte == 'pompa_di_calore' and pdc_ok -%}{%- set r.primaria = 'pdc' -%}
+  {%- elif pav_ok -%}{%- set r.primaria = 'pav' -%}
+  {%- elif pdc_ok -%}{%- set r.primaria = 'pdc' -%}
+  {%- else -%}{%- set r.primaria = 'nessuna' -%}
+  {%- endif -%}
+
+  {%- if t >= p.t_max_sic -%}
+    {%- set r.stato = 'sovratemperatura' -%}
+    {%- set r.pav = 'off' if pav_ok else 'invariato' -%}
+    {%- set r.pdc = 'off' if i.disp_pdc else 'invariato' -%}
+    {%- set r.motivo = 'Temperatura oltre il limite di sicurezza: fonti spente' -%}
+    {%- set r.immediato = true -%}
+  {%- elif r.primaria == 'nessuna' -%}
+    {%- set r.stato = 'nessuna_fonte' -%}
+    {%- set r.pdc = 'off' if (i.disp_pdc and not pdc_ok) else 'invariato' -%}
+    {%- set r.motivo = 'Nessuna fonte termica disponibile/abilitata per la zona' -%}
+  {%- elif r.primaria == 'pav' -%}
+    {#- Pavimento: fonte di base con isteresi. Compensazione dell'inerzia:
+        lo spegnimento usa la temperatura PREVISTA (attuale + velocità di
+        salita × inerzia_ore), così il calore accumulato nel massetto non
+        porta la stanza troppo oltre il setpoint. -#}
+    {%- set err_prev = sp - (t + (var * p.get('inerzia_ore', 0) if var is not none and var > 0 else 0)) -%}
+    {%- if err >= p.isteresi and err_prev > 0 -%}{%- set r.pav = 'on' -%}
+    {%- elif err <= -p.isteresi or (pav_prec == 'on' and err_prev <= -p.isteresi) -%}{%- set r.pav = 'off' -%}
+    {%- else -%}{%- set r.pav = pav_prec -%}
+    {%- endif -%}
+    {#- Pompa di calore: integrazione (boost) solo se serve -#}
+    {%- set lento = pav_prec == 'on' and i.pav_min_da >= p.boost_dopo_min and var is not none and var < p.variazione_min and err >= p.isteresi -%}
+    {%- if not i.disp_pdc -%}{%- set r.pdc = 'invariato' -%}
+    {%- elif not pdc_ok -%}{%- set r.pdc = 'off' -%}
+    {%- elif err >= p.soglia_boost or lento -%}{%- set r.pdc = 'heat' -%}
+    {%- elif err <= 0 or err_prev <= 0 -%}{%- set r.pdc = 'off' -%}
+    {%- else -%}{%- set r.pdc = 'heat' if pdc_prec == 'heat' else 'off' -%}
+    {%- endif -%}
+    {%- set r.motivo = 'Pavimento come fonte di base' ~ (', integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if lento and r.pdc == 'heat' else '') -%}
+  {%- else -%}
+    {#- Pompa di calore come fonte principale -#}
+    {%- if err >= p.isteresi -%}{%- set r.pdc = 'heat' -%}
+    {%- elif err <= -p.isteresi -%}{%- set r.pdc = 'off' -%}
+    {%- else -%}{%- set r.pdc = 'heat' if pdc_prec == 'heat' else 'off' -%}
+    {%- endif -%}
+    {%- set r.pav = 'off' if pav_ok else 'invariato' -%}
+    {%- set r.motivo = 'Pompa di calore come fonte principale' -%}
+  {%- endif -%}
+  {%- if i.disp_pdc and est is not none and est < p.pdc_min_esterna and r.stato == '' -%}
+    {%- set r.motivo = r.motivo ~ '; pompa di calore esclusa (esterna ' ~ est ~ ' °C)' -%}
+  {%- endif -%}
+  {%- if pdc_prec == 'cool' and r.pdc in ['heat', 'off'] -%}{%- set r.immediato = true -%}{%- endif -%}
+{%- else -%}
+  {#- ESTATE: solo pompa di calore. Il pavimento NON raffresca mai. -#}
+  {%- set errc = t - sp -%}
+  {%- set r.errore = (-errc) | round(2) -%}
+  {%- set r.primaria = 'pdc' -%}
+  {%- set r.pav = 'off' if i.disp_pav and pav_prec == 'on' else 'invariato' -%}
+  {%- if pav_prec == 'on' -%}{%- set r.immediato = true -%}{%- endif -%}
+  {%- if not i.disp_pdc -%}
+    {%- set r.stato = 'nessuna_fonte' -%}
+    {%- set r.motivo = 'Pompa di calore non disponibile' -%}
+  {%- elif t <= p.t_min_sic -%}
+    {%- set r.stato = 'sottotemperatura' -%}
+    {%- set r.pdc = 'off' -%}
+    {%- set r.motivo = 'Temperatura sotto il limite di sicurezza: raffrescamento spento' -%}
+    {%- set r.immediato = true -%}
+  {%- else -%}
+    {%- if errc >= p.isteresi -%}{%- set r.pdc = 'cool' -%}
+    {%- elif errc <= -p.isteresi -%}{%- set r.pdc = 'off' -%}
+    {%- else -%}{%- set r.pdc = 'cool' if pdc_prec == 'cool' else 'off' -%}
+    {%- endif -%}
+    {%- if pdc_prec == 'heat' -%}{%- set r.immediato = true -%}{%- endif -%}
+    {%- set r.motivo = 'Raffrescamento con pompa di calore (pavimento escluso)' -%}
+  {%- endif -%}
+{%- endif -%}
+
+{#- Finestra aperta: pompa di calore spenta, pavimento invariato (inerzia) -#}
+{%- if i.finestra and r.stato in ['', 'nessuna_fonte'] -%}
+  {%- set r.stato = 'finestra_aperta' -%}
+  {%- set r.pdc = 'off' if i.disp_pdc else 'invariato' -%}
+  {%- if r.pav == 'on' -%}{%- set r.pav = pav_prec -%}{%- endif -%}
+  {%- set r.motivo = 'Finestra aperta: pompa di calore spenta, pavimento invariato' -%}
+  {%- set r.immediato = true -%}
+{%- endif -%}
+
+{#- Tempi minimi di accensione/spegnimento (anti-ciclo), salvo casi immediati -#}
+{%- if not r.immediato -%}
+  {%- if r.pav in ['on', 'off'] and r.pav != pav_prec -%}
+    {%- set lim = p.pav_min_on if pav_prec == 'on' else p.pav_min_off -%}
+    {%- if i.pav_min_da < lim -%}{%- set r.pav = pav_prec -%}{%- set r.attesa = true -%}{%- endif -%}
+  {%- endif -%}
+  {%- if r.pdc in ['heat', 'cool', 'off'] and r.pdc != pdc_prec -%}
+    {%- set lim = p.pdc_min_on if pdc_prec in ['heat', 'cool'] else p.pdc_min_off -%}
+    {%- if i.pdc_min_da < lim -%}{%- set r.pdc = pdc_prec -%}{%- set r.attesa = true -%}{%- endif -%}
+  {%- endif -%}
+{%- endif -%}
+
+{%- if r.stato == '' -%}
+  {%- if r.pav == 'on' and r.pdc == 'heat' -%}{%- set r.stato = 'riscaldamento_combinato' -%}
+  {%- elif r.pav == 'on' -%}{%- set r.stato = 'riscaldamento_pavimento' -%}
+  {%- elif r.pdc == 'heat' -%}{%- set r.stato = 'riscaldamento_pdc' -%}
+  {%- elif r.pdc == 'cool' -%}{%- set r.stato = 'raffrescamento_pdc' -%}
+  {%- else -%}{%- set r.stato = 'in_temperatura' -%}
+  {%- endif -%}
+{%- endif -%}
+{%- if r.primaria == 'pav' and r.stato in ['riscaldamento_combinato', 'riscaldamento_pavimento', 'riscaldamento_pdc', 'in_temperatura'] -%}
+  {%- set r.motivo = 'Pavimento come fonte di base' ~ ('; integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if r.pdc == 'heat' and i.variazione is number and i.variazione < p.variazione_min and (sp - t) < p.soglia_boost else '') -%}
+{%- endif -%}
+{%- if r.attesa -%}{%- set r.motivo = r.motivo ~ ' [cambio rinviato: tempo minimo]' -%}{%- endif -%}
+{{- {'stato': r.stato, 'pav': r.pav, 'pdc': r.pdc, 'motivo': r.motivo, 'errore': r.errore,
+     'attesa': r.attesa, 'primaria': r.primaria} | to_json -}}
+{%- endmacro -%}
+
+{#- --------------------------------------------------------------------------
+    Wrapper che leggono gli helper Home Assistant della zona
+    -------------------------------------------------------------------------- -#}
+{%- macro hi_parametri() -%}
+{{- {
+  'isteresi': states('input_number.hi_clima_isteresi') | float(0.3),
+  'soglia_boost': states('input_number.hi_clima_soglia_boost') | float(1.5),
+  'pav_min_on': states('input_number.hi_clima_pav_min_on') | float(60),
+  'pav_min_off': states('input_number.hi_clima_pav_min_off') | float(60),
+  'pdc_min_on': states('input_number.hi_clima_pdc_min_on') | float(20),
+  'pdc_min_off': states('input_number.hi_clima_pdc_min_off') | float(15),
+  'pdc_min_esterna': states('input_number.hi_clima_pdc_min_esterna') | float(-15),
+  't_min_sic': states('input_number.hi_clima_t_min_sicurezza') | float(16),
+  't_max_sic': states('input_number.hi_clima_t_max_sicurezza') | float(28),
+  'boost_dopo_min': states('input_number.hi_clima_boost_dopo_min') | float(90),
+  'variazione_min': states('input_number.hi_clima_variazione_min') | float(0.2),
+  'inerzia_ore': states('input_number.hi_clima_inerzia_ore') | float(1.0),
+} | to_json -}}
+{%- endmacro -%}
+
+{%- macro hi_setpoint_zona(z) -%}
+{%- set wd = now().weekday() < 5 -%}
+{%- set pre = 'input_datetime.hi_clima_' ~ z ~ ('_feriali' if wd else '_festivi') -%}
+{%- set ini = states(pre ~ '_inizio') -%}
+{%- set fin = states(pre ~ '_fine') -%}
+{%- set ora = now().strftime('%H:%M:%S') -%}
+{%- set in_prog = ini not in ['unknown', 'unavailable'] and fin not in ['unknown', 'unavailable'] and ((ini <= ora < fin) if ini <= fin else (ora >= ini or ora < fin)) -%}
+{{- hi_calcola_setpoint({
+  'stagione': states('input_select.hi_clima_stagione'),
+  'modo': states('input_select.hi_clima_modo_' ~ z),
+  'modo_casa': states('input_select.hi_modo_casa'),
+  'profilo': states('input_select.hi_profilo_energia'),
+  'in_programma': in_prog,
+  'comfort': states('input_number.hi_clima_' ~ z ~ '_comfort') | float(20),
+  'eco': states('input_number.hi_clima_' ~ z ~ '_eco') | float(18),
+  'raffrescamento': states('input_number.hi_clima_' ~ z ~ '_raffrescamento') | float(26),
+  'assenza': states('input_number.hi_clima_assenza') | float(17),
+  'vacanza': states('input_number.hi_clima_vacanza') | float(15),
+  'raffr_assenza': states('input_number.hi_clima_raffr_assenza') | float(29),
+}) -}}
+{%- endmacro -%}
+
+{#- z: id zona; entita: entity_id del supervisore stesso (per leggere la
+    decisione precedente); fonti: elenco fonti previste per la zona. -#}
+{%- macro hi_decidi_zona(z, entita, fonti) -%}
+{%- from 'hi_common.jinja' import hi_disponibili -%}
+{%- set adesso = now() -%}
+{%- set pav_dal = state_attr(entita, 'pav_dal') -%}
+{%- set pdc_dal = state_attr(entita, 'pdc_dal') -%}
+{%- set pav_da = ((adesso - (pav_dal | as_datetime)).total_seconds() / 60) | round(1) if pav_dal else 99999 -%}
+{%- set pdc_da = ((adesso - (pdc_dal | as_datetime)).total_seconds() / 60) | round(1) if pdc_dal else 99999 -%}
+{%- set pav_prec = state_attr(entita, 'pav_ultimo') or 'off' -%}
+{%- set pdc_prec = state_attr(entita, 'pdc_ultimo') or 'off' -%}
+{%- set ingressi = {
+  'stagione': states('input_select.hi_clima_stagione'),
+  'modo': states('input_select.hi_clima_modo_' ~ z),
+  'override': is_state('input_boolean.hi_clima_override_' ~ z, 'on'),
+  'temp': states('sensor.hi_' ~ z ~ '_temperatura') | float(none),
+  'setpoint': states('sensor.hi_' ~ z ~ '_setpoint') | float(none),
+  'variazione': states('sensor.hi_' ~ z ~ '_variazione') | float(none),
+  'esterna': states('sensor.hi_temperatura_esterna') | float(none),
+  'finestra': is_state('binary_sensor.hi_' ~ z ~ '_finestra', 'on'),
+  'fonte': states('input_select.hi_clima_fonte_' ~ z),
+  'disp_pav': 'pavimento' in fonti and (hi_disponibili('hi_termostato_' ~ z) | from_json | count > 0),
+  'disp_pdc': 'pompa_di_calore' in fonti and (hi_disponibili('hi_pdc_' ~ z) | from_json | count > 0),
+  'pav_prec': pav_prec,
+  'pdc_prec': pdc_prec,
+  'pav_min_da': pav_da,
+  'pdc_min_da': pdc_da,
+  'par': hi_parametri() | from_json,
+} -%}
+{%- set d = hi_decidi(ingressi) | from_json -%}
+{%- set nuovo_pav = d.pav if d.pav in ['on', 'off'] else pav_prec -%}
+{%- set nuovo_pdc = d.pdc if d.pdc in ['heat', 'cool', 'off'] else pdc_prec -%}
+{{- dict(d, **{
+  'pav_ultimo': nuovo_pav,
+  'pav_dal': adesso.isoformat() if nuovo_pav != pav_prec else (pav_dal or ''),
+  'pdc_ultimo': nuovo_pdc,
+  'pdc_dal': adesso.isoformat() if nuovo_pdc != pdc_prec else (pdc_dal or ''),
+  'temperatura': ingressi.temp,
+  'setpoint': ingressi.setpoint,
+  'esterna': ingressi.esterna,
+  'variazione': ingressi.variazione,
+  'pav_disponibile': ingressi.disp_pav,
+  'pdc_disponibile': ingressi.disp_pdc,
+}) | to_json -}}
+{%- endmacro -%}
