@@ -18,7 +18,7 @@
 | Interruttore Scala | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Scala | `hi_luce`, `hi_monitorato` | — |
 | Interruttore Box Silvia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Box | `hi_luce`, `hi_monitorato` | — |
 | Altri interruttori Sonoff (elenco da completare) | ⚪ non disponibile | interruttore | SONOFF | sonofflan | — | `hi_luce` | — |
-| Coordinatore Zigbee USB (SONOFF) | ⚪ non disponibile | coordinatore | SONOFF | zigbee2mqtt | Locale tecnico |  | — |
+| Coordinatore Zigbee USB (SONOFF) | ⚪ non disponibile | coordinatore | SONOFF Dongle Plus MG24 (Silicon Labs EFR32MG24, firmware EmberZNet) | zigbee2mqtt | Locale tecnico |  | — |
 | Smartphone con Companion App | ⚪ non disponibile | tracker | _da fornire_ | mobile_app | — |  | — |
 | [SIM] Sensori temperatura/umidità | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_temp_inferiore`, `hi_simulazione` | `sensor.sim_temperatura_inferiore` |
 | [SIM] Umidità piano inferiore | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_umidita_inferiore`, `hi_simulazione` | `sensor.sim_umidita_inferiore` |
@@ -68,6 +68,6 @@
   - monitoraggio: stato; comando: on_off
 - **Altri interruttori Sonoff (elenco da completare)**: L'elenco nell'app continua oltre i 5 dispositivi visibili nello screenshot.
   - monitoraggio: stato; comando: on_off
-- **Coordinatore Zigbee USB (SONOFF)**: Collegare a Green con una prolunga USB di 1–2 m, lontano da router Wi-Fi, SSD e porte USB 3. Scegliere un canale Zigbee non sovrapposto al Wi-Fi (es. 15, 20 o 25).
+- **Coordinatore Zigbee USB (SONOFF)**: In Zigbee2MQTT usare adapter "ember" e la porta /dev/serial/by-id/… . Collegare a Green con una prolunga USB di 1–2 m, lontano da router Wi-Fi, SSD e porte USB 3. Scegliere un canale Zigbee non sovrapposto al Wi-Fi (es. 15, 20 o 25).
 - **Smartphone con Companion App**: Associare ogni device_tracker alla rispettiva persona da Impostazioni → Persone.
   - monitoraggio: posizione, batteria; comando: notifiche

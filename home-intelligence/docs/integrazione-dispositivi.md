@@ -55,8 +55,15 @@ Secondo testimonianze della community, il MINIR4 non ha la "DIY mode", ma il con
 
 ## 3. Zigbee (dongle Sonoff previsto)
 
-- Modello consigliato: **SONOFF Dongle Plus MG24** (EFR32MG24), successore del ZBDongle-E, supportato da ZHA. Vanno bene anche ZBDongle-E e ZBDongle-P.
+- Modello acquistato: **SONOFF Dongle Plus MG24** (EFR32MG24), successore del ZBDongle-E, supportato da ZHA. Vanno bene anche ZBDongle-E e ZBDongle-P.
 - Integrazione: **Zigbee2MQTT** (add-on Zigbee2MQTT + add-on broker Mosquitto, entrambi disponibili su HAOS/Green). L'ho scelta al posto di ZHA perché i termostati Tuya (TS0601) sono supportati molto meglio da Zigbee2MQTT: in ZHA spesso vengono riconosciuti senza entità. Un dongle serve **una sola** delle due integrazioni.
+- Configurazione dell'add-on Zigbee2MQTT per l'MG24:
+  ```yaml
+  serial:
+    port: /dev/serial/by-id/usb-…    # scegliere il percorso proposto dall'add-on (stabile ai riavvii)
+    adapter: ember                   # chip Silicon Labs EFR32MG24
+  ```
+  Se il dongle ha il firmware "Thread/Matter", va prima aggiornato al firmware **Zigbee (EmberZNet)** con il flasher web di SONOFF. Di fabbrica di solito è già Zigbee.
 - Installazione: prolunga USB da 1–2 m, lontano dal router Wi-Fi e dalle porte USB 3; canale Zigbee 15, 20 o 25.
 - **Primi acquisti utili per il progetto** (non obbligatori):
   - un **sensore di temperatura/umidità per zona** (`hi_temp_inferiore`, `hi_temp_mansarda`): migliora molto il supervisore rispetto al sensore interno del Daikin;

@@ -8,7 +8,7 @@
 | Mansarda (open space + bagno) | **radiatori**: ~3 termosifoni + termoarredo bagno | Daikin Perfera FTXM-N | inerzia minore: 20 min e 0,25 h di default |
 
 - **Acqua calda dalla caldaia condominiale.** Il sistema non comanda caldaie: il termostato apre o chiude soltanto la valvola di zona (contatto pulito), forse insieme a un circolatore.
-- **Orari condominiali:** attivando `input_boolean.hi_centrale_vincolo_orari` e impostando accensione e spegnimento, fuori orario il supervisore non conta sulla fonte idronica e, se disponibile, usa la pompa di calore (`binary_sensor.hi_centrale_disponibile`). Vincolo disattivato di default finché non conosciamo gli orari reali.
+- **Orari condominiali:** nella stagione di accensione il riscaldamento condominiale è attivo **24 ore su 24** (informazione del 09/11/2026), quindi il vincolo orario `input_boolean.hi_centrale_vincolo_orari` resta **disattivato**. Fuori stagione la fonte idronica è comunque esclusa, perché il supervisore usa la stagione `estate`/`spento`. Il vincolo resta disponibile nel caso il condominio introduca delle fasce orarie.
 - **Requisiti per i nuovi termostati smart:** relè a **contatto pulito** (NO/COM), funzionamento **a batteria** (al muro ci sono solo i 2 fili verso la valvola, niente neutro né 230 V), integrazione locale con HA (Zigbee/Matter preferibili).
 
 Nel codice la decisione `pav` indica la **fonte idronica** della zona, cioè pavimento o radiatori. Tempi minimi e compensazione dell'inerzia sono **per zona** (`input_number.hi_clima_<zona>_idro_min_on/off`, `hi_clima_<zona>_inerzia_ore`). Né il pavimento né i radiatori vengono mai usati in raffrescamento.

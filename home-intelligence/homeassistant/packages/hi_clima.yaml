@@ -213,7 +213,8 @@ script:
     sequence:
       - action: input_boolean.turn_off
         target: {entity_id: input_boolean.hi_centrale_vincolo_orari}
-      # Orari indicativi: sostituire con quelli del regolamento condominiale.
+      # Il riscaldamento condominiale è attivo h24 in stagione: vincolo spento.
+      # Orari indicativi, usati solo se il vincolo viene attivato.
       - action: input_datetime.set_datetime
         target: {entity_id: input_datetime.hi_centrale_inizio}
         data: {time: "05:00:00"}

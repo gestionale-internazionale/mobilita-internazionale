@@ -267,7 +267,7 @@ dispositivi:
   - id: coordinatore_zigbee
     nome: Coordinatore Zigbee USB (SONOFF)
     marca: SONOFF
-    modello: null                   # consigliato Dongle Plus MG24 (EFR32MG24); ZBDongle-E/P compatibili
+    modello: Dongle Plus MG24 (Silicon Labs EFR32MG24, firmware EmberZNet)
     tipo: coordinatore
     integrazione: zigbee2mqtt       # add-on Zigbee2MQTT + broker Mosquitto (scelto per i termostati Tuya)
     area: locale_tecnico
@@ -277,6 +277,7 @@ dispositivi:
     monitoraggio: []
     comando: []
     note: >-
+      In Zigbee2MQTT usare adapter "ember" e la porta /dev/serial/by-id/… .
       Collegare a Green con una prolunga USB di 1–2 m, lontano da router Wi-Fi,
       SSD e porte USB 3. Scegliere un canale Zigbee non sovrapposto al Wi-Fi
       (es. 15, 20 o 25).
