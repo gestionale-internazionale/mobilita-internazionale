@@ -126,6 +126,10 @@ class TestInverno:
         r = decidi(ha, temp=19.8, pav_prec="on", pav_min_da=30, variazione=0.05)
         assert r["pdc"] == "off"
 
+    def test_nome_fonte_idronica_nel_motivo(self, ha):
+        r = decidi(ha, temp=19.8, nome_idro="Radiatori")
+        assert r["motivo"].startswith("Radiatori come fonte di base") and r["pav"] == "on"
+
     def test_esterna_troppo_fredda_esclude_pdc(self, ha):
         r = decidi(ha, temp=17.0, esterna=-20, pdc_prec="heat", pdc_min_da=999)
         assert r["pdc"] == "off" and r["pav"] == "on"
@@ -217,6 +221,9 @@ def _sp(sc, ora):
 
 
 def esegui_scenario(ha, sc):
+    par = dict(PAR, **sc.get("parametri", {}))
+    f = dict({"t_mandata": 35, "k_riscaldo": 0.5, "k_scambio": 0.4, "k_ambiente": 0.6, "k_disperso": 0.08},
+             **sc.get("fisica", {}))
     passo = sc["passo_min"]
     dt = passo / 60
     t, m, est = sc["iniziale"]["t"], sc["iniziale"]["m"], sc["iniziale"]["esterna"]
@@ -236,7 +243,8 @@ def esegui_scenario(ha, sc):
         var = None if t_prec is None else round((t - t_prec) / dt, 2)
         r = decidi(ha, stagione=sc["stagione"], fonte=sc.get("fonte", "auto"), temp=None if guasto else round(t, 1),
                    setpoint=sp, esterna=est, variazione=var, pav_prec=pav_prec, pdc_prec=pdc_prec,
-                   pav_min_da=pav_da, pdc_min_da=pdc_da)
+                   pav_min_da=pav_da, pdc_min_da=pdc_da, par=par,
+                   nome_idro=sc.get("nome_idro", "Pavimento"))
         nuovo_pav = r["pav"] if r["pav"] in ("on", "off") else pav_prec
         nuovo_pdc = r["pdc"] if r["pdc"] in ("heat", "cool", "off") else pdc_prec
         pav_da = 0.0 if nuovo_pav != pav_prec else pav_da + passo
@@ -248,8 +256,8 @@ def esegui_scenario(ha, sc):
         pdc_heat = 1 if (nuovo_pdc == "heat" and t < sp + 0.3) else 0
         pdc_cool = 1 if (nuovo_pdc == "cool" and t > sp - 0.3) else 0
         t_prec = t
-        m2 = m + dt * (0.5 * (35 - m) * pav_call - 0.4 * (m - t))
-        t = t + dt * (0.6 * (m - t) + 1.5 * pdc_heat - 2.0 * pdc_cool - 0.08 * (t - est))
+        m2 = m + dt * (f["k_riscaldo"] * (f["t_mandata"] - m) * pav_call - f["k_scambio"] * (m - t))
+        t = t + dt * (f["k_ambiente"] * (m - t) + 1.5 * pdc_heat - 2.0 * pdc_cool - f["k_disperso"] * (t - est))
         m = m2
     return storia
 
@@ -273,6 +281,7 @@ def _durate_minime(storia, chiave, passo):
 def test_scenario(ha, file):
     sc = yaml.safe_load(file.read_text(encoding="utf-8"))
     storia = esegui_scenario(ha, sc)
+    PARS = dict(PAR, **sc.get("parametri", {}))
     att = sc.get("attese", {})
     passo = sc["passo_min"]
     report = ROOT / "tests" / "report"
@@ -291,7 +300,7 @@ def test_scenario(ha, file):
             assert h["r"]["pav"] == "invariato" and h["r"]["pdc"] == "invariato"
     # tempi minimi (tolleranza di un passo di campionamento)
     for stato, durata in _durate_minime(storia, "pav", passo):
-        lim = PAR["pav_min_on"] if stato == "on" else PAR["pav_min_off"]
+        lim = PARS["pav_min_on"] if stato == "on" else PARS["pav_min_off"]
         assert durata + passo >= lim, f"pavimento {stato} per soli {durata} min"
     for stato, durata in _durate_minime(storia, "pdc", passo):
         lim = PAR["pdc_min_on"] if stato in ("heat", "cool") else PAR["pdc_min_off"]
@@ -312,5 +321,7 @@ def test_scenario(ha, file):
         for h in storia:
             if e["ore"] <= h["ora"] < e.get("fino_a", 1e9) and not h["guasto"]:
                 assert abs(h["sp"] - h["t"]) <= e["max"] + 0.01, f"errore {h['sp'] - h['t']:.2f} alle {h['ora']:.1f}"
+    if "motivo_contiene" in att:
+        assert any(att["motivo_contiene"] in h["r"]["motivo"] for h in storia)
     if "pdc_off_dopo_ora" in att:
         assert all(h["pdc"] == "off" for h in storia if h["ora"] >= att["pdc_off_dopo_ora"] + 0.5)

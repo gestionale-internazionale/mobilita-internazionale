@@ -35,6 +35,17 @@ INV = ROOT / "inventory"
 GEN_PKG = HA / "packages" / "generated"
 GEN_DASH = HA / "dashboards" / "generated"
 FLOORPLANS = HA / "www" / "floorplans"
+IDRONICHE = {"pavimento": "Pavimento radiante", "radiatori": "Radiatori"}
+
+
+def idro(z: dict) -> tuple[str | None, str]:
+    """Fonte idronica della zona (tipo, nome leggibile)."""
+    for f in z.get("fonti", []):
+        if f in IDRONICHE:
+            return f, IDRONICHE[f]
+    return None, "Fonte idronica"
+
+
 SLUG = re.compile(r"^[a-z][a-z0-9_]*$")
 STATI = {"reale", "non_disponibile", "simulazione"}
 HEADER = (
@@ -84,21 +95,21 @@ def validate(house: dict, devices: dict) -> list[str]:
                     err.append(f"area '{a['id']}': planimetria.{k} mancante")
             if pl.get("x", 0) + pl.get("w", 0) > 100 or pl.get("y", 0) + pl.get("h", 0) > 100:
                 err.append(f"area '{a['id']}': rettangolo planimetria oltre il 100%")
-        if a.get("piano") and not pl:
-            err.append(f"area '{a['id']}': manca 'planimetria' (necessaria per la vista del piano)")
 
     for z in house.get("zone_termiche", []):
         if z.get("piano") not in floors:
             err.append(f"zona '{z['id']}': piano '{z.get('piano')}' inesistente")
         for f in z.get("fonti", []):
-            if f not in ("pavimento", "pompa_di_calore"):
+            if f not in ("pavimento", "radiatori", "pompa_di_calore"):
                 err.append(f"zona '{z['id']}': fonte '{f}' non prevista")
+        if len([f for f in z.get("fonti", []) if f in IDRONICHE]) > 1:
+            err.append(f"zona '{z['id']}': al massimo una fonte idronica (pavimento o radiatori)")
         for lb in (f"hi_temp_{z['id']}", f"hi_pdc_{z['id']}", f"hi_termostato_{z['id']}",
                    f"hi_finestra_{z['id']}", f"hi_umidita_{z['id']}"):
             if lb not in labels:
                 err.append(f"zona '{z['id']}': manca l'etichetta '{lb}' in house.yaml")
         p = z.get("predefiniti", {})
-        for k in ("comfort", "eco", "raffrescamento"):
+        for k in ("comfort", "eco", "raffrescamento", "idro_min_on", "idro_min_off", "inerzia_ore"):
             if not isinstance(p.get(k), (int, float)):
                 err.append(f"zona '{z['id']}': predefiniti.{k} mancante")
         for k in ("feriali", "festivi"):
@@ -222,6 +233,7 @@ def gen_zone(house: dict) -> str:
     o.append("input_select:\n")
     for z in zones:
         i, n = z["id"], z["nome"]
+        tipo_idro = idro(z)[0] or "idronico"
         o.append(f"""  hi_clima_modo_{i}:
     name: {_q('Clima ' + n + ' – modalità')}
     icon: mdi:thermostat-auto
@@ -229,7 +241,7 @@ def gen_zone(house: dict) -> str:
   hi_clima_fonte_{i}:
     name: {_q('Clima ' + n + ' – fonte preferita')}
     icon: mdi:heat-wave
-    options: [auto, pavimento, pompa_di_calore]
+    options: [auto, {tipo_idro}, pompa_di_calore]
 """)
     o.append("\ninput_number:\n")
     for z in zones:
@@ -246,6 +258,32 @@ def gen_zone(house: dict) -> str:
     icon: {ic}
     mode: box
 """)
+        nid = idro(z)[1]
+        o.append(f"""  hi_clima_{i}_idro_min_on:
+    name: {_q(nid + ' ' + n + ' – tempo minimo acceso')}
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-outline
+    mode: box
+  hi_clima_{i}_idro_min_off:
+    name: {_q(nid + ' ' + n + ' – tempo minimo spento')}
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-off-outline
+    mode: box
+  hi_clima_{i}_inerzia_ore:
+    name: {_q(nid + ' ' + n + ' – compensazione inerzia (0 = off)')}
+    min: 0
+    max: 4
+    step: 0.25
+    unit_of_measurement: h
+    icon: mdi:weight
+    mode: box
+""")
     o.append("\ninput_boolean:\n")
     for z in zones:
         i, n = z["id"], z["nome"]
@@ -256,7 +294,7 @@ def gen_zone(house: dict) -> str:
     name: {_q('Consenso comando pompa di calore ' + n)}
     icon: mdi:heat-pump
   hi_clima_attuazione_pavimento_{i}:
-    name: {_q('Consenso comando pavimento ' + n)}
+    name: {_q('Consenso comando termostato ' + n + ' (' + idro(z)[1].lower() + ')')}
     icon: mdi:heating-coil
 """)
     o.append("\ninput_text:\n")
@@ -551,6 +589,15 @@ def gen_zone(house: dict) -> str:
       - action: input_number.set_value
         target: {{entity_id: input_number.hi_clima_{i}_raffrescamento}}
         data: {{value: {p['raffrescamento']}}}
+      - action: input_number.set_value
+        target: {{entity_id: input_number.hi_clima_{i}_idro_min_on}}
+        data: {{value: {p['idro_min_on']}}}
+      - action: input_number.set_value
+        target: {{entity_id: input_number.hi_clima_{i}_idro_min_off}}
+        data: {{value: {p['idro_min_off']}}}
+      - action: input_number.set_value
+        target: {{entity_id: input_number.hi_clima_{i}_inerzia_ore}}
+        data: {{value: {p['inerzia_ore']}}}
 """)
         for g in ("feriali", "festivi"):
             for k in ("inizio", "fine"):
@@ -723,7 +770,8 @@ def gen_view_clima(house: dict, devices: dict) -> str:
             {"type": "tile", "entity": f"timer.hi_clima_override_{i}", "name": "Scadenza override",
              "visibility": [{"condition": "state", "entity": f"input_boolean.hi_clima_override_{i}", "state": "on"}]},
         ]
-        for lab, title in ((f"hi_pdc_{i}", "Pompa di calore"), (f"hi_termostato_{i}", "Termostato pavimento")):
+        nid = idro(z)[1]
+        for lab, title in ((f"hi_pdc_{i}", "Pompa di calore"), (f"hi_termostato_{i}", f"Termostato ({nid.lower()})")):
             real, sim = _climate_entities(devices, lab)
             for e in real:
                 cards.append({"type": "thermostat", "entity": e, "name": title,
@@ -740,10 +788,13 @@ def gen_view_clima(house: dict, devices: dict) -> str:
             f"input_number.hi_clima_{i}_comfort", f"input_number.hi_clima_{i}_eco",
             f"input_number.hi_clima_{i}_raffrescamento",
             f"input_datetime.hi_clima_{i}_feriali_inizio", f"input_datetime.hi_clima_{i}_feriali_fine",
-            f"input_datetime.hi_clima_{i}_festivi_inizio", f"input_datetime.hi_clima_{i}_festivi_fine"]})
+            f"input_datetime.hi_clima_{i}_festivi_inizio", f"input_datetime.hi_clima_{i}_festivi_fine",
+            {"type": "section", "label": f"{nid}: parametri"},
+            f"input_number.hi_clima_{i}_idro_min_on", f"input_number.hi_clima_{i}_idro_min_off",
+            f"input_number.hi_clima_{i}_inerzia_ore"]})
         cards.append({"type": "entities", "title": "Consensi all'attuazione", "state_color": True, "entities": [
             {"entity": f"input_boolean.hi_clima_attuazione_pdc_{i}", "name": "Comando pompa di calore"},
-            {"entity": f"input_boolean.hi_clima_attuazione_pavimento_{i}", "name": "Comando pavimento (termostato)"},
+            {"entity": f"input_boolean.hi_clima_attuazione_pavimento_{i}", "name": f"Comando termostato ({nid.lower()})"},
             {"entity": f"input_text.hi_clima_{i}_comandato", "name": "Ultimo comando"}]})
         cards.append({"type": "history-graph", "title": "Ultime 24 ore", "hours_to_show": 24, "entities": [
             {"entity": f"sensor.hi_{i}_temperatura", "name": "Temperatura"},
@@ -756,10 +807,9 @@ def gen_view_clima(house: dict, devices: dict) -> str:
             {"type": "heading", "heading": "Parametri del supervisore", "heading_style": "subtitle", "icon": "mdi:cog"},
             {"type": "entities", "state_color": True, "entities": [
                 "input_number.hi_clima_isteresi", "input_number.hi_clima_soglia_boost",
-                "input_number.hi_clima_pav_min_on", "input_number.hi_clima_pav_min_off",
                 "input_number.hi_clima_pdc_min_on", "input_number.hi_clima_pdc_min_off",
                 "input_number.hi_clima_pdc_min_esterna", "input_number.hi_clima_boost_dopo_min",
-                "input_number.hi_clima_variazione_min", "input_number.hi_clima_inerzia_ore",
+                "input_number.hi_clima_variazione_min",
                 {"type": "section", "label": "Setpoint globali"},
                 "input_number.hi_clima_assenza", "input_number.hi_clima_vacanza",
                 "input_number.hi_clima_raffr_assenza", "input_number.hi_clima_pavimento_setback",

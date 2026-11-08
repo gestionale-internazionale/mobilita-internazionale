@@ -16,19 +16,33 @@ sections:
     heading_style: title
     icon: mdi:floor-plan
   - type: markdown
-    content: '## Piano inferiore
+    content: '## Piano terra
 
-      Zona giorno {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_giorno_luci'',''on'') else ''''
-      }}{{ '' '' ~ states(''sensor.hi_area_inferiore_giorno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_giorno_temperatura'')
+      Salotto {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_salotto_luci'',''on'') else ''''
+      }}{{ '' '' ~ states(''sensor.hi_area_inferiore_salotto_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_salotto_temperatura'')
       else '''' }} · Cucina {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_cucina_luci'',''on'')
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_cucina_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_cucina_temperatura'')
-      else '''' }} · Ingresso {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_ingresso_luci'',''on'')
-      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_ingresso_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_ingresso_temperatura'')
-      else '''' }} · Servizi {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_servizi_luci'',''on'')
-      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_servizi_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_servizi_temperatura'')
+      else '''' }} · Studio {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_studio_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_studio_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_studio_temperatura'')
+      else '''' }} · Disimpegno {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_disimpegno_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_disimpegno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_disimpegno_temperatura'')
+      else '''' }} · Bagno {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_bagno_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_bagno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_bagno_temperatura'')
+      else '''' }} · Lavanderia (bagno cieco) {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_lavanderia_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_lavanderia_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_lavanderia_temperatura'')
+      else '''' }} · Camera da letto {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_camera_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_inferiore_camera_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_camera_temperatura'')
+      else '''' }} · Balcone salotto {{ ''💡'' if is_state(''binary_sensor.hi_area_balcone_salotto_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_balcone_salotto_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_balcone_salotto_temperatura'')
+      else '''' }} · Balcone cucina {{ ''💡'' if is_state(''binary_sensor.hi_area_balcone_cucina_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_balcone_cucina_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_balcone_cucina_temperatura'')
+      else '''' }} · Balcone studio {{ ''💡'' if is_state(''binary_sensor.hi_area_balcone_studio_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_balcone_studio_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_balcone_studio_temperatura'')
+      else '''' }} · Balcone camera {{ ''💡'' if is_state(''binary_sensor.hi_area_balcone_camera_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_balcone_camera_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_balcone_camera_temperatura'')
       else '''' }}'
   - type: button
-    name: Apri Piano inferiore
+    name: Apri Piano terra
     icon: mdi:home-floor-0
     show_state: false
     tap_action:
@@ -39,6 +53,8 @@ sections:
 
       Mansarda principale {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_principale_luci'',''on'')
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_principale_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_principale_temperatura'')
+      else '''' }} · Bagno mansarda {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_bagno_luci'',''on'')
+      else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_bagno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_bagno_temperatura'')
       else '''' }} · Mansarda secondaria {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_secondaria_luci'',''on'')
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_secondaria_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_secondaria_temperatura'')
       else '''' }}'
@@ -76,6 +92,24 @@ sections:
     heading: Altre aree
     heading_style: subtitle
     icon: mdi:texture-box
+  - type: area
+    area: scala
+    display_type: compact
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+  - type: area
+    area: box
+    display_type: compact
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
   - type: area
     area: esterno
     display_type: compact

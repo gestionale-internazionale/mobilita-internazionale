@@ -51,7 +51,7 @@ def test_entita_principali(ha):
     for e in ["input_select.hi_modo_casa", "sensor.hi_occupazione", "sensor.hi_inferiore_supervisore",
               "sensor.hi_mansarda_supervisore", "sensor.hi_en_pv_potenza", "script.hi_scenario_buonanotte",
               "binary_sensor.hi_sistema_pronto", "sensor.hi_entita_offline", "counter.hi_errori_automazioni",
-              "timer.hi_clima_override_inferiore", "binary_sensor.hi_area_inferiore_giorno_luci"]:
+              "timer.hi_clima_override_inferiore", "binary_sensor.hi_area_inferiore_salotto_luci"]:
         assert ha.state(e) is not None, f"manca {e}"
 
 
@@ -92,8 +92,8 @@ def test_modello_sincronizzato(ha):
     piani = {f["floor_id"] for f in ha.ws("config/floor_registry/list")}
     aree = {a["area_id"]: a for a in ha.ws("config/area_registry/list")}
     assert {"piano_inferiore", "mansarda"} <= piani
-    assert aree["inferiore_giorno"]["floor_id"] == "piano_inferiore"
-    assert aree["inferiore_giorno"]["name"] == "Zona giorno"
+    assert aree["inferiore_salotto"]["floor_id"] == "piano_inferiore"
+    assert aree["inferiore_salotto"]["name"] == "Salotto"
     etichette = {lb["label_id"] for lb in ha.ws("config/label_registry/list")}
     assert {"hi_luce", "hi_critico", "hi_pdc_inferiore", "hi_simulazione"} <= etichette
 
@@ -226,10 +226,10 @@ def test_scenari_vacanza_tutti_fuori_rientro(pronto):
 def test_commuta_luci_area_dalla_planimetria(pronto):
     ha = pronto
     off(ha, "light.sim_luce_giorno")
-    ha.call("script", "hi_area_luci_commuta", area="inferiore_giorno")
+    ha.call("script", "hi_area_luci_commuta", area="inferiore_salotto")
     ha.wait_for(lambda: ha.s("light.sim_luce_giorno") == "on", 10, msg="accesa")
-    ha.wait_for(lambda: ha.s("binary_sensor.hi_area_inferiore_giorno_luci") == "on", 10, msg="aggregato area")
-    ha.call("script", "hi_area_luci_commuta", area="inferiore_giorno")
+    ha.wait_for(lambda: ha.s("binary_sensor.hi_area_inferiore_salotto_luci") == "on", 10, msg="aggregato area")
+    ha.call("script", "hi_area_luci_commuta", area="inferiore_salotto")
     ha.wait_for(lambda: ha.s("light.sim_luce_giorno") == "off", 10, msg="spenta")
 
 

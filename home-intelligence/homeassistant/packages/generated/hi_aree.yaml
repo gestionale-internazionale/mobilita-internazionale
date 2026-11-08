@@ -8,54 +8,54 @@
 # considerato automaticamente, senza modificare questo file.
 
 template:
-  # --- Zona giorno (inferiore_giorno) ---
+  # --- Salotto (inferiore_salotto) ---
   - binary_sensor:
-      - name: "Luci · Zona giorno"
-        unique_id: hi_area_inferiore_giorno_luci
-        default_entity_id: binary_sensor.hi_area_inferiore_giorno_luci
+      - name: "Luci · Salotto"
+        unique_id: hi_area_inferiore_salotto_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_salotto_luci
         device_class: light
         icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
         state: >
-          {% set l = (area_entities('inferiore_giorno') | select('match', 'light\\.') | list
-                      + area_entities('inferiore_giorno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {% set l = (area_entities('inferiore_salotto') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list %}
           {{ l | select('is_state', 'on') | list | count > 0 }}
         attributes:
           accese: >
-            {% set l = (area_entities('inferiore_giorno') | select('match', 'light\\.') | list
-                        + area_entities('inferiore_giorno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {% set l = (area_entities('inferiore_salotto') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list %}
             {{ l | select('is_state', 'on') | list | count }}
           totali: >
-            {{ (area_entities('inferiore_giorno') | select('match', 'light\\.') | list
-                 + area_entities('inferiore_giorno') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
-      - name: "Occupazione · Zona giorno"
-        unique_id: hi_area_inferiore_giorno_occupata
-        default_entity_id: binary_sensor.hi_area_inferiore_giorno_occupata
+            {{ (area_entities('inferiore_salotto') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Salotto"
+        unique_id: hi_area_inferiore_salotto_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_salotto_occupata
         device_class: occupancy
         state: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_giorno') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_salotto') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | select('is_state', 'on') | list | count > 0 }}
         availability: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_giorno') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_salotto') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
   - sensor:
-      - name: "Temperatura · Zona giorno"
-        unique_id: hi_area_inferiore_giorno_temperatura
-        default_entity_id: sensor.hi_area_inferiore_giorno_temperatura
+      - name: "Temperatura · Salotto"
+        unique_id: hi_area_inferiore_salotto_temperatura
+        default_entity_id: sensor.hi_area_inferiore_salotto_temperatura
         device_class: temperature
         unit_of_measurement: "°C"
         state_class: measurement
         state: >
-          {% set v = area_entities('inferiore_giorno') | select('match', 'sensor\\.')
+          {% set v = area_entities('inferiore_salotto') | select('match', 'sensor\\.')
              | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
           {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
         availability: >
-          {{ area_entities('inferiore_giorno') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+          {{ area_entities('inferiore_salotto') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
   # --- Cucina (inferiore_cucina) ---
   - binary_sensor:
@@ -106,103 +106,446 @@ template:
         availability: >
           {{ area_entities('inferiore_cucina') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
-  # --- Ingresso (inferiore_ingresso) ---
+  # --- Studio (inferiore_studio) ---
   - binary_sensor:
-      - name: "Luci · Ingresso"
-        unique_id: hi_area_inferiore_ingresso_luci
-        default_entity_id: binary_sensor.hi_area_inferiore_ingresso_luci
+      - name: "Luci · Studio"
+        unique_id: hi_area_inferiore_studio_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_studio_luci
         device_class: light
         icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
         state: >
-          {% set l = (area_entities('inferiore_ingresso') | select('match', 'light\\.') | list
-                      + area_entities('inferiore_ingresso') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {% set l = (area_entities('inferiore_studio') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_studio') | select('in', label_entities('hi_luce')) | list) | unique | list %}
           {{ l | select('is_state', 'on') | list | count > 0 }}
         attributes:
           accese: >
-            {% set l = (area_entities('inferiore_ingresso') | select('match', 'light\\.') | list
-                        + area_entities('inferiore_ingresso') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {% set l = (area_entities('inferiore_studio') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_studio') | select('in', label_entities('hi_luce')) | list) | unique | list %}
             {{ l | select('is_state', 'on') | list | count }}
           totali: >
-            {{ (area_entities('inferiore_ingresso') | select('match', 'light\\.') | list
-                 + area_entities('inferiore_ingresso') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
-      - name: "Occupazione · Ingresso"
-        unique_id: hi_area_inferiore_ingresso_occupata
-        default_entity_id: binary_sensor.hi_area_inferiore_ingresso_occupata
+            {{ (area_entities('inferiore_studio') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_studio') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Studio"
+        unique_id: hi_area_inferiore_studio_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_studio_occupata
         device_class: occupancy
         state: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_ingresso') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_studio') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | select('is_state', 'on') | list | count > 0 }}
         availability: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_ingresso') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_studio') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
   - sensor:
-      - name: "Temperatura · Ingresso"
-        unique_id: hi_area_inferiore_ingresso_temperatura
-        default_entity_id: sensor.hi_area_inferiore_ingresso_temperatura
+      - name: "Temperatura · Studio"
+        unique_id: hi_area_inferiore_studio_temperatura
+        default_entity_id: sensor.hi_area_inferiore_studio_temperatura
         device_class: temperature
         unit_of_measurement: "°C"
         state_class: measurement
         state: >
-          {% set v = area_entities('inferiore_ingresso') | select('match', 'sensor\\.')
+          {% set v = area_entities('inferiore_studio') | select('match', 'sensor\\.')
              | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
           {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
         availability: >
-          {{ area_entities('inferiore_ingresso') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+          {{ area_entities('inferiore_studio') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
-  # --- Servizi (inferiore_servizi) ---
+  # --- Disimpegno (inferiore_disimpegno) ---
   - binary_sensor:
-      - name: "Luci · Servizi"
-        unique_id: hi_area_inferiore_servizi_luci
-        default_entity_id: binary_sensor.hi_area_inferiore_servizi_luci
+      - name: "Luci · Disimpegno"
+        unique_id: hi_area_inferiore_disimpegno_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_disimpegno_luci
         device_class: light
         icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
         state: >
-          {% set l = (area_entities('inferiore_servizi') | select('match', 'light\\.') | list
-                      + area_entities('inferiore_servizi') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {% set l = (area_entities('inferiore_disimpegno') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_disimpegno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
           {{ l | select('is_state', 'on') | list | count > 0 }}
         attributes:
           accese: >
-            {% set l = (area_entities('inferiore_servizi') | select('match', 'light\\.') | list
-                        + area_entities('inferiore_servizi') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {% set l = (area_entities('inferiore_disimpegno') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_disimpegno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
             {{ l | select('is_state', 'on') | list | count }}
           totali: >
-            {{ (area_entities('inferiore_servizi') | select('match', 'light\\.') | list
-                 + area_entities('inferiore_servizi') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
-      - name: "Occupazione · Servizi"
-        unique_id: hi_area_inferiore_servizi_occupata
-        default_entity_id: binary_sensor.hi_area_inferiore_servizi_occupata
+            {{ (area_entities('inferiore_disimpegno') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_disimpegno') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Disimpegno"
+        unique_id: hi_area_inferiore_disimpegno_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_disimpegno_occupata
         device_class: occupancy
         state: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_servizi') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_disimpegno') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | select('is_state', 'on') | list | count > 0 }}
         availability: >
           {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('inferiore_servizi') | select('match', 'binary_sensor\\.') %}
+          {% for e in area_entities('inferiore_disimpegno') | select('match', 'binary_sensor\\.') %}
             {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
           {% endfor %}
           {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
   - sensor:
-      - name: "Temperatura · Servizi"
-        unique_id: hi_area_inferiore_servizi_temperatura
-        default_entity_id: sensor.hi_area_inferiore_servizi_temperatura
+      - name: "Temperatura · Disimpegno"
+        unique_id: hi_area_inferiore_disimpegno_temperatura
+        default_entity_id: sensor.hi_area_inferiore_disimpegno_temperatura
         device_class: temperature
         unit_of_measurement: "°C"
         state_class: measurement
         state: >
-          {% set v = area_entities('inferiore_servizi') | select('match', 'sensor\\.')
+          {% set v = area_entities('inferiore_disimpegno') | select('match', 'sensor\\.')
              | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
           {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
         availability: >
-          {{ area_entities('inferiore_servizi') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+          {{ area_entities('inferiore_disimpegno') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Bagno (inferiore_bagno) ---
+  - binary_sensor:
+      - name: "Luci · Bagno"
+        unique_id: hi_area_inferiore_bagno_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_bagno_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('inferiore_bagno') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('inferiore_bagno') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('inferiore_bagno') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Bagno"
+        unique_id: hi_area_inferiore_bagno_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_bagno_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_bagno') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_bagno') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Bagno"
+        unique_id: hi_area_inferiore_bagno_temperatura
+        default_entity_id: sensor.hi_area_inferiore_bagno_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('inferiore_bagno') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('inferiore_bagno') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Lavanderia (bagno cieco) (inferiore_lavanderia) ---
+  - binary_sensor:
+      - name: "Luci · Lavanderia (bagno cieco)"
+        unique_id: hi_area_inferiore_lavanderia_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_lavanderia_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('inferiore_lavanderia') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_lavanderia') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('inferiore_lavanderia') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_lavanderia') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('inferiore_lavanderia') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_lavanderia') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Lavanderia (bagno cieco)"
+        unique_id: hi_area_inferiore_lavanderia_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_lavanderia_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_lavanderia') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_lavanderia') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Lavanderia (bagno cieco)"
+        unique_id: hi_area_inferiore_lavanderia_temperatura
+        default_entity_id: sensor.hi_area_inferiore_lavanderia_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('inferiore_lavanderia') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('inferiore_lavanderia') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Camera da letto (inferiore_camera) ---
+  - binary_sensor:
+      - name: "Luci · Camera da letto"
+        unique_id: hi_area_inferiore_camera_luci
+        default_entity_id: binary_sensor.hi_area_inferiore_camera_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('inferiore_camera') | select('match', 'light\\.') | list
+                      + area_entities('inferiore_camera') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('inferiore_camera') | select('match', 'light\\.') | list
+                        + area_entities('inferiore_camera') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('inferiore_camera') | select('match', 'light\\.') | list
+                 + area_entities('inferiore_camera') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Camera da letto"
+        unique_id: hi_area_inferiore_camera_occupata
+        default_entity_id: binary_sensor.hi_area_inferiore_camera_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_camera') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('inferiore_camera') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Camera da letto"
+        unique_id: hi_area_inferiore_camera_temperatura
+        default_entity_id: sensor.hi_area_inferiore_camera_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('inferiore_camera') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('inferiore_camera') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Balcone salotto (balcone_salotto) ---
+  - binary_sensor:
+      - name: "Luci · Balcone salotto"
+        unique_id: hi_area_balcone_salotto_luci
+        default_entity_id: binary_sensor.hi_area_balcone_salotto_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('balcone_salotto') | select('match', 'light\\.') | list
+                      + area_entities('balcone_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('balcone_salotto') | select('match', 'light\\.') | list
+                        + area_entities('balcone_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('balcone_salotto') | select('match', 'light\\.') | list
+                 + area_entities('balcone_salotto') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Balcone salotto"
+        unique_id: hi_area_balcone_salotto_occupata
+        default_entity_id: binary_sensor.hi_area_balcone_salotto_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_salotto') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_salotto') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Balcone salotto"
+        unique_id: hi_area_balcone_salotto_temperatura
+        default_entity_id: sensor.hi_area_balcone_salotto_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('balcone_salotto') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('balcone_salotto') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Balcone cucina (balcone_cucina) ---
+  - binary_sensor:
+      - name: "Luci · Balcone cucina"
+        unique_id: hi_area_balcone_cucina_luci
+        default_entity_id: binary_sensor.hi_area_balcone_cucina_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('balcone_cucina') | select('match', 'light\\.') | list
+                      + area_entities('balcone_cucina') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('balcone_cucina') | select('match', 'light\\.') | list
+                        + area_entities('balcone_cucina') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('balcone_cucina') | select('match', 'light\\.') | list
+                 + area_entities('balcone_cucina') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Balcone cucina"
+        unique_id: hi_area_balcone_cucina_occupata
+        default_entity_id: binary_sensor.hi_area_balcone_cucina_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_cucina') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_cucina') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Balcone cucina"
+        unique_id: hi_area_balcone_cucina_temperatura
+        default_entity_id: sensor.hi_area_balcone_cucina_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('balcone_cucina') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('balcone_cucina') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Balcone studio (balcone_studio) ---
+  - binary_sensor:
+      - name: "Luci · Balcone studio"
+        unique_id: hi_area_balcone_studio_luci
+        default_entity_id: binary_sensor.hi_area_balcone_studio_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('balcone_studio') | select('match', 'light\\.') | list
+                      + area_entities('balcone_studio') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('balcone_studio') | select('match', 'light\\.') | list
+                        + area_entities('balcone_studio') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('balcone_studio') | select('match', 'light\\.') | list
+                 + area_entities('balcone_studio') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Balcone studio"
+        unique_id: hi_area_balcone_studio_occupata
+        default_entity_id: binary_sensor.hi_area_balcone_studio_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_studio') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_studio') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Balcone studio"
+        unique_id: hi_area_balcone_studio_temperatura
+        default_entity_id: sensor.hi_area_balcone_studio_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('balcone_studio') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('balcone_studio') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Balcone camera (balcone_camera) ---
+  - binary_sensor:
+      - name: "Luci · Balcone camera"
+        unique_id: hi_area_balcone_camera_luci
+        default_entity_id: binary_sensor.hi_area_balcone_camera_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('balcone_camera') | select('match', 'light\\.') | list
+                      + area_entities('balcone_camera') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('balcone_camera') | select('match', 'light\\.') | list
+                        + area_entities('balcone_camera') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('balcone_camera') | select('match', 'light\\.') | list
+                 + area_entities('balcone_camera') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Balcone camera"
+        unique_id: hi_area_balcone_camera_occupata
+        default_entity_id: binary_sensor.hi_area_balcone_camera_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_camera') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('balcone_camera') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Balcone camera"
+        unique_id: hi_area_balcone_camera_temperatura
+        default_entity_id: sensor.hi_area_balcone_camera_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('balcone_camera') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('balcone_camera') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
   # --- Mansarda principale (mansarda_principale) ---
   - binary_sensor:
@@ -253,6 +596,55 @@ template:
         availability: >
           {{ area_entities('mansarda_principale') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
+  # --- Bagno mansarda (mansarda_bagno) ---
+  - binary_sensor:
+      - name: "Luci · Bagno mansarda"
+        unique_id: hi_area_mansarda_bagno_luci
+        default_entity_id: binary_sensor.hi_area_mansarda_bagno_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('mansarda_bagno') | select('match', 'light\\.') | list
+                      + area_entities('mansarda_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('mansarda_bagno') | select('match', 'light\\.') | list
+                        + area_entities('mansarda_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('mansarda_bagno') | select('match', 'light\\.') | list
+                 + area_entities('mansarda_bagno') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Bagno mansarda"
+        unique_id: hi_area_mansarda_bagno_occupata
+        default_entity_id: binary_sensor.hi_area_mansarda_bagno_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('mansarda_bagno') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('mansarda_bagno') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Bagno mansarda"
+        unique_id: hi_area_mansarda_bagno_temperatura
+        default_entity_id: sensor.hi_area_mansarda_bagno_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('mansarda_bagno') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('mansarda_bagno') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
   # --- Mansarda secondaria (mansarda_secondaria) ---
   - binary_sensor:
       - name: "Luci · Mansarda secondaria"
@@ -301,6 +693,104 @@ template:
           {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
         availability: >
           {{ area_entities('mansarda_secondaria') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Scala (scala) ---
+  - binary_sensor:
+      - name: "Luci · Scala"
+        unique_id: hi_area_scala_luci
+        default_entity_id: binary_sensor.hi_area_scala_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('scala') | select('match', 'light\\.') | list
+                      + area_entities('scala') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('scala') | select('match', 'light\\.') | list
+                        + area_entities('scala') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('scala') | select('match', 'light\\.') | list
+                 + area_entities('scala') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Scala"
+        unique_id: hi_area_scala_occupata
+        default_entity_id: binary_sensor.hi_area_scala_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('scala') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('scala') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Scala"
+        unique_id: hi_area_scala_temperatura
+        default_entity_id: sensor.hi_area_scala_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('scala') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('scala') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
+             | map('states') | select('is_number') | list | count > 0 }}
+  # --- Box (box) ---
+  - binary_sensor:
+      - name: "Luci · Box"
+        unique_id: hi_area_box_luci
+        default_entity_id: binary_sensor.hi_area_box_luci
+        device_class: light
+        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
+        state: >
+          {% set l = (area_entities('box') | select('match', 'light\\.') | list
+                      + area_entities('box') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+          {{ l | select('is_state', 'on') | list | count > 0 }}
+        attributes:
+          accese: >
+            {% set l = (area_entities('box') | select('match', 'light\\.') | list
+                        + area_entities('box') | select('in', label_entities('hi_luce')) | list) | unique | list %}
+            {{ l | select('is_state', 'on') | list | count }}
+          totali: >
+            {{ (area_entities('box') | select('match', 'light\\.') | list
+                 + area_entities('box') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
+      - name: "Occupazione · Box"
+        unique_id: hi_area_box_occupata
+        default_entity_id: binary_sensor.hi_area_box_occupata
+        device_class: occupancy
+        state: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('box') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
+        availability: >
+          {% set ns = namespace(l=[]) %}
+          {% for e in area_entities('box') | select('match', 'binary_sensor\\.') %}
+            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
+          {% endfor %}
+          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
+  - sensor:
+      - name: "Temperatura · Box"
+        unique_id: hi_area_box_temperatura
+        default_entity_id: sensor.hi_area_box_temperatura
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state_class: measurement
+        state: >
+          {% set v = area_entities('box') | select('match', 'sensor\\.')
+             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
+          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
+        availability: >
+          {{ area_entities('box') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
   # --- Esterno (esterno) ---
   - binary_sensor:

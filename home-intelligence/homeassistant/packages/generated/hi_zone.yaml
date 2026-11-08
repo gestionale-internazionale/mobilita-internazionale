@@ -7,11 +7,11 @@
 
 input_select:
   hi_clima_modo_inferiore:
-    name: "Clima Piano inferiore – modalità"
+    name: "Clima Piano terra – modalità"
     icon: mdi:thermostat-auto
     options: [automatico, comfort, eco, manuale, spento]
   hi_clima_fonte_inferiore:
-    name: "Clima Piano inferiore – fonte preferita"
+    name: "Clima Piano terra – fonte preferita"
     icon: mdi:heat-wave
     options: [auto, pavimento, pompa_di_calore]
   hi_clima_modo_mansarda:
@@ -21,11 +21,11 @@ input_select:
   hi_clima_fonte_mansarda:
     name: "Clima Mansarda – fonte preferita"
     icon: mdi:heat-wave
-    options: [auto, pavimento, pompa_di_calore]
+    options: [auto, radiatori, pompa_di_calore]
 
 input_number:
   hi_clima_inferiore_comfort:
-    name: "Setpoint comfort Piano inferiore"
+    name: "Setpoint comfort Piano terra"
     min: 16
     max: 24
     step: 0.5
@@ -33,7 +33,7 @@ input_number:
     icon: mdi:sofa
     mode: box
   hi_clima_inferiore_eco:
-    name: "Setpoint eco Piano inferiore"
+    name: "Setpoint eco Piano terra"
     min: 14
     max: 22
     step: 0.5
@@ -41,12 +41,36 @@ input_number:
     icon: mdi:leaf
     mode: box
   hi_clima_inferiore_raffrescamento:
-    name: "Setpoint raffrescamento Piano inferiore"
+    name: "Setpoint raffrescamento Piano terra"
     min: 22
     max: 30
     step: 0.5
     unit_of_measurement: "°C"
     icon: mdi:snowflake
+    mode: box
+  hi_clima_inferiore_idro_min_on:
+    name: "Pavimento radiante Piano terra – tempo minimo acceso"
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-outline
+    mode: box
+  hi_clima_inferiore_idro_min_off:
+    name: "Pavimento radiante Piano terra – tempo minimo spento"
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-off-outline
+    mode: box
+  hi_clima_inferiore_inerzia_ore:
+    name: "Pavimento radiante Piano terra – compensazione inerzia (0 = off)"
+    min: 0
+    max: 4
+    step: 0.25
+    unit_of_measurement: h
+    icon: mdi:weight
     mode: box
   hi_clima_mansarda_comfort:
     name: "Setpoint comfort Mansarda"
@@ -72,16 +96,40 @@ input_number:
     unit_of_measurement: "°C"
     icon: mdi:snowflake
     mode: box
+  hi_clima_mansarda_idro_min_on:
+    name: "Radiatori Mansarda – tempo minimo acceso"
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-outline
+    mode: box
+  hi_clima_mansarda_idro_min_off:
+    name: "Radiatori Mansarda – tempo minimo spento"
+    min: 0
+    max: 360
+    step: 5
+    unit_of_measurement: min
+    icon: mdi:timer-off-outline
+    mode: box
+  hi_clima_mansarda_inerzia_ore:
+    name: "Radiatori Mansarda – compensazione inerzia (0 = off)"
+    min: 0
+    max: 4
+    step: 0.25
+    unit_of_measurement: h
+    icon: mdi:weight
+    mode: box
 
 input_boolean:
   hi_clima_override_inferiore:
-    name: "Override manuale Piano inferiore"
+    name: "Override manuale Piano terra"
     icon: mdi:hand-back-right
   hi_clima_attuazione_pdc_inferiore:
-    name: "Consenso comando pompa di calore Piano inferiore"
+    name: "Consenso comando pompa di calore Piano terra"
     icon: mdi:heat-pump
   hi_clima_attuazione_pavimento_inferiore:
-    name: "Consenso comando pavimento Piano inferiore"
+    name: "Consenso comando termostato Piano terra (pavimento radiante)"
     icon: mdi:heating-coil
   hi_clima_override_mansarda:
     name: "Override manuale Mansarda"
@@ -90,12 +138,12 @@ input_boolean:
     name: "Consenso comando pompa di calore Mansarda"
     icon: mdi:heat-pump
   hi_clima_attuazione_pavimento_mansarda:
-    name: "Consenso comando pavimento Mansarda"
+    name: "Consenso comando termostato Mansarda (radiatori)"
     icon: mdi:heating-coil
 
 input_text:
   hi_clima_inferiore_comandato:
-    name: "Ultimo comando clima Piano inferiore"
+    name: "Ultimo comando clima Piano terra"
     max: 255
   hi_clima_mansarda_comandato:
     name: "Ultimo comando clima Mansarda"
@@ -103,19 +151,19 @@ input_text:
 
 input_datetime:
   hi_clima_inferiore_feriali_inizio:
-    name: "Comfort Piano inferiore feriali – inizio"
+    name: "Comfort Piano terra feriali – inizio"
     has_date: false
     has_time: true
   hi_clima_inferiore_feriali_fine:
-    name: "Comfort Piano inferiore feriali – fine"
+    name: "Comfort Piano terra feriali – fine"
     has_date: false
     has_time: true
   hi_clima_inferiore_festivi_inizio:
-    name: "Comfort Piano inferiore sabato/festivi – inizio"
+    name: "Comfort Piano terra sabato/festivi – inizio"
     has_date: false
     has_time: true
   hi_clima_inferiore_festivi_fine:
-    name: "Comfort Piano inferiore sabato/festivi – fine"
+    name: "Comfort Piano terra sabato/festivi – fine"
     has_date: false
     has_time: true
   hi_clima_mansarda_feriali_inizio:
@@ -137,7 +185,7 @@ input_datetime:
 
 timer:
   hi_clima_override_inferiore:
-    name: "Scadenza override Piano inferiore"
+    name: "Scadenza override Piano terra"
     restore: true
     icon: mdi:timer-sand
   hi_clima_override_mansarda:
@@ -164,16 +212,16 @@ sensor:
 homeassistant:
   customize:
     sensor.hi_inferiore_variazione:
-      friendly_name: "Variazione temperatura Piano inferiore"
+      friendly_name: "Variazione temperatura Piano terra"
       icon: mdi:chart-line-variant
     sensor.hi_mansarda_variazione:
       friendly_name: "Variazione temperatura Mansarda"
       icon: mdi:chart-line-variant
 
 template:
-  # =========================== ZONA PIANO INFERIORE ===========================
+  # =========================== ZONA PIANO TERRA ===========================
   - sensor:
-      - name: "Temperatura Piano inferiore"
+      - name: "Temperatura Piano terra"
         unique_id: hi_inferiore_temperatura
         default_entity_id: sensor.hi_inferiore_temperatura
         unit_of_measurement: "°C"
@@ -184,7 +232,7 @@ template:
         attributes:
           sensori_validi: "{% from 'hi_common.jinja' import hi_validi %}{{ hi_validi('hi_temp_inferiore') }}"
           sensori: "{% from 'hi_common.jinja' import hi_ruolo %}{{ hi_ruolo('hi_temp_inferiore') | from_json }}"
-      - name: "Umidità Piano inferiore"
+      - name: "Umidità Piano terra"
         unique_id: hi_inferiore_umidita
         default_entity_id: sensor.hi_inferiore_umidita
         unit_of_measurement: "%"
@@ -192,7 +240,7 @@ template:
         state_class: measurement
         state: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_inferiore', 0) }}"
         availability: "{% from 'hi_common.jinja' import hi_media %}{{ hi_media('hi_umidita_inferiore', 0) | is_number }}"
-      - name: "Setpoint effettivo Piano inferiore"
+      - name: "Setpoint effettivo Piano terra"
         unique_id: hi_inferiore_setpoint
         default_entity_id: sensor.hi_inferiore_setpoint
         unit_of_measurement: "°C"
@@ -204,14 +252,14 @@ template:
         attributes:
           origine: "{% from 'hi_clima.jinja' import hi_setpoint_zona %}{{ (hi_setpoint_zona('inferiore') | from_json).origine }}"
   - binary_sensor:
-      - name: "Finestre aperte Piano inferiore"
+      - name: "Finestre aperte Piano terra"
         unique_id: hi_inferiore_finestra
         default_entity_id: binary_sensor.hi_inferiore_finestra
         device_class: window
         # Ritardo: brevi aperture non interrompono la climatizzazione.
         delay_on: {minutes: 2}
         state: "{% from 'hi_common.jinja' import hi_qualcuno_on %}{{ hi_qualcuno_on('hi_finestra_inferiore') == 'on' }}"
-      - name: "Scostamento manuale Piano inferiore"
+      - name: "Scostamento manuale Piano terra"
         unique_id: hi_inferiore_scostamento
         default_entity_id: binary_sensor.hi_inferiore_scostamento
         icon: mdi:hand-back-right-outline
@@ -249,7 +297,7 @@ template:
           - input_boolean.hi_clima_override_inferiore
           - binary_sensor.hi_inferiore_finestra
     sensor:
-      - name: "Supervisore Piano inferiore"
+      - name: "Supervisore Piano terra"
         unique_id: hi_inferiore_supervisore
         default_entity_id: sensor.hi_inferiore_supervisore
         icon: mdi:brain
@@ -357,7 +405,7 @@ template:
         default_entity_id: sensor.hi_mansarda_supervisore
         icon: mdi:brain
         variables:
-          r: "{% from 'hi_clima.jinja' import hi_decidi_zona %}{{ hi_decidi_zona('mansarda', 'sensor.hi_mansarda_supervisore', ['pavimento', 'pompa_di_calore']) | from_json }}"
+          r: "{% from 'hi_clima.jinja' import hi_decidi_zona %}{{ hi_decidi_zona('mansarda', 'sensor.hi_mansarda_supervisore', ['radiatori', 'pompa_di_calore']) | from_json }}"
         state: "{{ r.stato }}"
         attributes:
           pav: "{{ r.pav }}"
@@ -376,12 +424,12 @@ template:
           variazione: "{{ r.variazione }}"
           pav_disponibile: "{{ r.pav_disponibile }}"
           pdc_disponibile: "{{ r.pdc_disponibile }}"
-          fonti_previste: "{{ ['pavimento', 'pompa_di_calore'] }}"
+          fonti_previste: "{{ ['radiatori', 'pompa_di_calore'] }}"
 
 automation:
-  # =========================== ZONA PIANO INFERIORE ===========================
+  # =========================== ZONA PIANO TERRA ===========================
   - id: hi_clima_attuazione_inferiore
-    alias: "HI · Clima · Attuazione Piano inferiore"
+    alias: "HI · Clima · Attuazione Piano terra"
     description: >-
       Applica le decisioni del supervisore. Non fa nulla finché il consenso
       generale e i consensi per fonte sono disattivati (impostazione predefinita).
@@ -421,7 +469,7 @@ automation:
           pdc: "{{ state_attr('sensor.hi_inferiore_supervisore', 'pdc') }}"
 
   - id: hi_clima_rileva_manuale_inferiore
-    alias: "HI · Clima · Rileva intervento manuale Piano inferiore"
+    alias: "HI · Clima · Rileva intervento manuale Piano terra"
     mode: single
     triggers:
       - trigger: state
@@ -439,13 +487,13 @@ automation:
         data:
           livello: info
           id: hi_clima_manuale_inferiore
-          titolo: "Clima Piano inferiore: intervento manuale"
+          titolo: "Clima Piano terra: intervento manuale"
           messaggio: >-
             Rilevata una modifica manuale. Il controllo automatico è sospeso per
             {{ states('input_number.hi_clima_override_ore') }} ore.
 
   - id: hi_clima_override_avvio_inferiore
-    alias: "HI · Clima · Override avviato Piano inferiore"
+    alias: "HI · Clima · Override avviato Piano terra"
     mode: restart
     triggers:
       - trigger: state
@@ -459,7 +507,7 @@ automation:
           duration: "{{ (states('input_number.hi_clima_override_ore') | float(3) * 3600) | int }}"
 
   - id: hi_clima_override_fine_inferiore
-    alias: "HI · Clima · Override terminato Piano inferiore"
+    alias: "HI · Clima · Override terminato Piano terra"
     mode: single
     triggers:
       - trigger: event
@@ -475,7 +523,7 @@ automation:
         target: {entity_id: timer.hi_clima_override_inferiore}
 
   - id: hi_clima_allarme_inferiore
-    alias: "HI · Clima · Temperatura fuori limiti Piano inferiore"
+    alias: "HI · Clima · Temperatura fuori limiti Piano terra"
     mode: single
     max_exceeded: silent
     triggers:
@@ -490,7 +538,7 @@ automation:
         data:
           livello: importante
           id: hi_clima_allarme_inferiore
-          titolo: "Temperatura fuori limiti: Piano inferiore"
+          titolo: "Temperatura fuori limiti: Piano terra"
           messaggio: "{{ states('sensor.hi_inferiore_temperatura') }} °C (limiti {{ states('input_number.hi_clima_allarme_min') }}–{{ states('input_number.hi_clima_allarme_max') }} °C)."
       - delay: {hours: 2}
 
@@ -614,7 +662,7 @@ script:
     alias: HI · Clima · Predefiniti zone
     mode: single
     sequence:
-      # Piano inferiore
+      # Piano terra
       - action: input_select.select_option
         target: {entity_id: input_select.hi_clima_modo_inferiore}
         data: {option: automatico}
@@ -636,6 +684,15 @@ script:
       - action: input_number.set_value
         target: {entity_id: input_number.hi_clima_inferiore_raffrescamento}
         data: {value: 26.0}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_idro_min_on}
+        data: {value: 60}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_idro_min_off}
+        data: {value: 60}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_inferiore_inerzia_ore}
+        data: {value: 1.0}
       - action: input_datetime.set_datetime
         target: {entity_id: input_datetime.hi_clima_inferiore_feriali_inizio}
         data: {time: "06:30:00"}
@@ -670,6 +727,15 @@ script:
       - action: input_number.set_value
         target: {entity_id: input_number.hi_clima_mansarda_raffrescamento}
         data: {value: 26.0}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_idro_min_on}
+        data: {value: 20}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_idro_min_off}
+        data: {value: 20}
+      - action: input_number.set_value
+        target: {entity_id: input_number.hi_clima_mansarda_inerzia_ore}
+        data: {value: 0.25}
       - action: input_datetime.set_datetime
         target: {entity_id: input_datetime.hi_clima_mansarda_feriali_inizio}
         data: {time: "06:30:00"}

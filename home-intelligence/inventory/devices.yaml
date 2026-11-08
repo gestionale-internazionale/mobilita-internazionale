@@ -33,7 +33,7 @@ dispositivi:
     modello: Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x
     tipo: pompa_di_calore
     integrazione: daikin            # integrazione core "Daikin AC", LOCALE (local_polling, scoperta zeroconf)
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: non_disponibile          # identificato e compatibile; da integrare su Green/VM
     entita: []                      # es. climate.<nome>, sensor.<nome>_inside_temperature, …
     etichette: [hi_pdc_inferiore, hi_monitorato]
@@ -70,12 +70,12 @@ dispositivi:
       nominale, non per l'integrazione.
 
   - id: termostato_inferiore
-    nome: Termostato pavimento piano inferiore
+    nome: Termostato piano terra (pavimento radiante)
     marca: null                   # acquistato, modello DA FORNIRE
     modello: null
     tipo: termostato
     integrazione: da_verificare   # preferibile Matter/Zigbee/locale
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: non_disponibile
     entita: []
     etichette: [hi_termostato_inferiore, hi_monitorato]
@@ -87,7 +87,7 @@ dispositivi:
       Il pavimento non viene MAI usato in raffrescamento.
 
   - id: termostato_mansarda
-    nome: Termostato pavimento mansarda
+    nome: Termostato mansarda (radiatori)
     marca: null
     modello: null
     tipo: termostato
@@ -98,7 +98,28 @@ dispositivi:
     etichette: [hi_termostato_mansarda, hi_monitorato]
     monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
     comando: [setpoint, modalita]
-    note: Vedi termostato_inferiore.
+    note: >-
+      Il termostato attuale regola ~3 termosifoni e il termoarredo del bagno
+      (fonte "radiatori": inerzia media, parametri dedicati). Il supervisore
+      agisce solo sul setpoint del termostato. Verificare cablaggio e cosa
+      comanda (valvola di zona / pompa / caldaia) prima di sostituirlo.
+
+  - id: termoarredi_piano_terra
+    nome: Termoarredi bagni piano terra (2)
+    marca: null
+    modello: null
+    tipo: termoarredo
+    integrazione: da_verificare     # idraulici (stesso impianto) o elettrici?
+    area: inferiore_bagno           # uno in Bagno, uno in Lavanderia
+    stato: non_disponibile
+    entita: []
+    etichette: []
+    monitoraggio: []
+    comando: []
+    note: >-
+      Non comandati dal supervisore. Se ELETTRICI, si potranno gestire con una
+      presa/relè con misura di energia (orari e assenza); se IDRAULICI, seguono
+      l'impianto e non vanno comandati separatamente senza valvola dedicata.
 
   # ---------------------------------------------------------------------------
   # ENERGIA – impianto previsto (marca inverter non nota)
@@ -160,65 +181,65 @@ dispositivi:
     modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
     tipo: interruttore
     integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
-    area: null
+    area: inferiore_lavanderia
     stato: non_disponibile
     entita: []
     etichette: [hi_luce, hi_monitorato]
     monitoraggio: [stato]
     comando: [on_off]
-    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+    note: "Confermare se comanda una luce o un altro carico."
   - id: sonoff_studio
     nome: "Interruttore Studio"
     marca: SONOFF
     modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
     tipo: interruttore
     integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
-    area: null
+    area: inferiore_studio
     stato: non_disponibile
     entita: []
     etichette: [hi_luce, hi_monitorato]
     monitoraggio: [stato]
     comando: [on_off]
-    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+    note: "Confermare se comanda una luce o un altro carico."
   - id: sonoff_bagno_mansarda
     nome: "Interruttore Bagno mansarda"
     marca: SONOFF
     modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
     tipo: interruttore
     integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
-    area: mansarda_principale
+    area: mansarda_bagno
     stato: non_disponibile
     entita: []
     etichette: [hi_luce, hi_monitorato]
     monitoraggio: [stato]
     comando: [on_off]
-    note: "Ambiente provvisorio, in futuro un'area 'Bagno mansarda' dedicata."
+    note: "Confermare se comanda la luce del bagno."
   - id: sonoff_scala
     nome: "Interruttore Scala"
     marca: SONOFF
     modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
     tipo: interruttore
     integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
-    area: null
+    area: scala
     stato: non_disponibile
     entita: []
     etichette: [hi_luce, hi_monitorato]
     monitoraggio: [stato]
     comando: [on_off]
-    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+    note: "Confermare se comanda una luce o un altro carico."
   - id: sonoff_box_silvia
     nome: "Interruttore Box Silvia"
     marca: SONOFF
     modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
     tipo: interruttore
     integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
-    area: null
+    area: box
     stato: non_disponibile
     entita: []
     etichette: [hi_luce, hi_monitorato]
     monitoraggio: [stato]
     comando: [on_off]
-    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+    note: "Confermare se comanda una luce o un altro carico."
   - id: sonoff_altri
     nome: Altri interruttori Sonoff (elenco da completare)
     marca: SONOFF
@@ -276,7 +297,7 @@ dispositivi:
     nome: "[SIM] Sensori temperatura/umidità"
     tipo: sensore
     integrazione: template
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [sensor.sim_temperatura_inferiore]
     etichette: [hi_temp_inferiore, hi_simulazione]
@@ -284,7 +305,7 @@ dispositivi:
     nome: "[SIM] Umidità piano inferiore"
     tipo: sensore
     integrazione: template
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [sensor.sim_umidita_inferiore]
     etichette: [hi_umidita_inferiore, hi_simulazione]
@@ -308,7 +329,7 @@ dispositivi:
     nome: "[SIM] Daikin piano inferiore"
     tipo: pompa_di_calore
     integrazione: generic_thermostat
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [climate.sim_daikin_inferiore]
     etichette: [hi_pdc_inferiore, hi_monitorato, hi_simulazione]
@@ -324,7 +345,7 @@ dispositivi:
     nome: "[SIM] Termostato pavimento inferiore"
     tipo: termostato
     integrazione: generic_thermostat
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [climate.sim_termostato_inferiore]
     etichette: [hi_termostato_inferiore, hi_monitorato, hi_simulazione]
@@ -340,7 +361,7 @@ dispositivi:
     nome: "[SIM] Luce zona giorno"
     tipo: luce
     integrazione: template
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [light.sim_luce_giorno]
     etichette: [hi_luce, hi_simulazione]
@@ -356,7 +377,7 @@ dispositivi:
     nome: "[SIM] Luce ingresso"
     tipo: luce
     integrazione: template
-    area: inferiore_ingresso
+    area: inferiore_disimpegno
     stato: simulazione
     entita: [light.sim_luce_ingresso]
     etichette: [hi_luce, hi_luce_ingresso, hi_simulazione]
@@ -380,7 +401,7 @@ dispositivi:
     nome: "[SIM] Presa TV (non essenziale)"
     tipo: presa
     integrazione: template
-    area: inferiore_giorno
+    area: inferiore_salotto
     stato: simulazione
     entita: [switch.sim_presa_tv]
     etichette: [hi_carico_non_essenziale, hi_simulazione]
@@ -396,7 +417,7 @@ dispositivi:
     nome: "[SIM] Sensore movimento ingresso"
     tipo: sensore_movimento
     integrazione: template
-    area: inferiore_ingresso
+    area: inferiore_disimpegno
     stato: simulazione
     entita: [binary_sensor.sim_movimento_ingresso]
     etichette: [hi_presenza_supplementare, hi_simulazione]

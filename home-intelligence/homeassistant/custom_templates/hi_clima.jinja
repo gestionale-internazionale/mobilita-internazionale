@@ -11,7 +11,8 @@
                                                e chiamano le funzioni pure.
 
     Valori delle decisioni:
-      pav: on | off | invariato        (pavimento radiante via termostato)
+      pav: on | off | invariato        (fonte IDRONICA via termostato: pavimento
+                                        radiante o radiatori, secondo la zona)
       pdc: heat | cool | off | invariato (pompa di calore Daikin)
     "invariato" = nessun comando (fail-safe).
     ========================================================================== -#}
@@ -121,7 +122,7 @@
     {%- elif err <= 0 or err_prev <= 0 -%}{%- set r.pdc = 'off' -%}
     {%- else -%}{%- set r.pdc = 'heat' if pdc_prec == 'heat' else 'off' -%}
     {%- endif -%}
-    {%- set r.motivo = 'Pavimento come fonte di base' ~ (', integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if lento and r.pdc == 'heat' else '') -%}
+    {%- set r.motivo = (i.nome_idro | default('Pavimento')) ~ ' come fonte di base' ~ (', integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if lento and r.pdc == 'heat' else '') -%}
   {%- else -%}
     {#- Pompa di calore come fonte principale -#}
     {%- if err >= p.isteresi -%}{%- set r.pdc = 'heat' -%}
@@ -136,7 +137,7 @@
   {%- endif -%}
   {%- if pdc_prec == 'cool' and r.pdc in ['heat', 'off'] -%}{%- set r.immediato = true -%}{%- endif -%}
 {%- else -%}
-  {#- ESTATE: solo pompa di calore. Il pavimento NON raffresca mai. -#}
+  {#- ESTATE: solo pompa di calore. La fonte idronica NON raffresca mai. -#}
   {%- set errc = t - sp -%}
   {%- set r.errore = (-errc) | round(2) -%}
   {%- set r.primaria = 'pdc' -%}
@@ -156,7 +157,7 @@
     {%- else -%}{%- set r.pdc = 'cool' if pdc_prec == 'cool' else 'off' -%}
     {%- endif -%}
     {%- if pdc_prec == 'heat' -%}{%- set r.immediato = true -%}{%- endif -%}
-    {%- set r.motivo = 'Raffrescamento con pompa di calore (pavimento escluso)' -%}
+    {%- set r.motivo = 'Raffrescamento con pompa di calore (' ~ (i.nome_idro | default('pavimento')) | lower ~ ' esclusi)' -%}
   {%- endif -%}
 {%- endif -%}
 
@@ -165,7 +166,7 @@
   {%- set r.stato = 'finestra_aperta' -%}
   {%- set r.pdc = 'off' if i.disp_pdc else 'invariato' -%}
   {%- if r.pav == 'on' -%}{%- set r.pav = pav_prec -%}{%- endif -%}
-  {%- set r.motivo = 'Finestra aperta: pompa di calore spenta, pavimento invariato' -%}
+  {%- set r.motivo = 'Finestra aperta: pompa di calore spenta, ' ~ (i.nome_idro | default('pavimento')) | lower ~ ' invariato' -%}
   {%- set r.immediato = true -%}
 {%- endif -%}
 
@@ -190,7 +191,7 @@
   {%- endif -%}
 {%- endif -%}
 {%- if r.primaria == 'pav' and r.stato in ['riscaldamento_combinato', 'riscaldamento_pavimento', 'riscaldamento_pdc', 'in_temperatura'] -%}
-  {%- set r.motivo = 'Pavimento come fonte di base' ~ ('; integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if r.pdc == 'heat' and i.variazione is number and i.variazione < p.variazione_min and (sp - t) < p.soglia_boost else '') -%}
+  {%- set r.motivo = (i.nome_idro | default('Pavimento')) ~ ' come fonte di base' ~ ('; integrazione pompa di calore' if r.pdc == 'heat' else '') ~ (' (salita lenta)' if r.pdc == 'heat' and i.variazione is number and i.variazione < p.variazione_min and (sp - t) < p.soglia_boost else '') -%}
 {%- endif -%}
 {%- if r.attesa -%}{%- set r.motivo = r.motivo ~ ' [cambio rinviato: tempo minimo]' -%}{%- endif -%}
 {{- {'stato': r.stato, 'pav': r.pav, 'pdc': r.pdc, 'motivo': r.motivo, 'errore': r.errore,
@@ -200,12 +201,13 @@
 {#- --------------------------------------------------------------------------
     Wrapper che leggono gli helper Home Assistant della zona
     -------------------------------------------------------------------------- -#}
-{%- macro hi_parametri() -%}
+{#- Parametri globali + parametri idronici della zona z. -#}
+{%- macro hi_parametri(z) -%}
 {{- {
   'isteresi': states('input_number.hi_clima_isteresi') | float(0.3),
   'soglia_boost': states('input_number.hi_clima_soglia_boost') | float(1.5),
-  'pav_min_on': states('input_number.hi_clima_pav_min_on') | float(60),
-  'pav_min_off': states('input_number.hi_clima_pav_min_off') | float(60),
+  'pav_min_on': states('input_number.hi_clima_' ~ z ~ '_idro_min_on') | float(60),
+  'pav_min_off': states('input_number.hi_clima_' ~ z ~ '_idro_min_off') | float(60),
   'pdc_min_on': states('input_number.hi_clima_pdc_min_on') | float(20),
   'pdc_min_off': states('input_number.hi_clima_pdc_min_off') | float(15),
   'pdc_min_esterna': states('input_number.hi_clima_pdc_min_esterna') | float(-15),
@@ -213,7 +215,7 @@
   't_max_sic': states('input_number.hi_clima_t_max_sicurezza') | float(28),
   'boost_dopo_min': states('input_number.hi_clima_boost_dopo_min') | float(90),
   'variazione_min': states('input_number.hi_clima_variazione_min') | float(0.2),
-  'inerzia_ore': states('input_number.hi_clima_inerzia_ore') | float(1.0),
+  'inerzia_ore': states('input_number.hi_clima_' ~ z ~ '_inerzia_ore') | float(1.0),
 } | to_json -}}
 {%- endmacro -%}
 
@@ -260,13 +262,14 @@
   'esterna': states('sensor.hi_temperatura_esterna') | float(none),
   'finestra': is_state('binary_sensor.hi_' ~ z ~ '_finestra', 'on'),
   'fonte': states('input_select.hi_clima_fonte_' ~ z),
-  'disp_pav': 'pavimento' in fonti and (hi_disponibili('hi_termostato_' ~ z) | from_json | count > 0),
+  'disp_pav': ('pavimento' in fonti or 'radiatori' in fonti) and (hi_disponibili('hi_termostato_' ~ z) | from_json | count > 0),
   'disp_pdc': 'pompa_di_calore' in fonti and (hi_disponibili('hi_pdc_' ~ z) | from_json | count > 0),
   'pav_prec': pav_prec,
   'pdc_prec': pdc_prec,
   'pav_min_da': pav_da,
   'pdc_min_da': pdc_da,
-  'par': hi_parametri() | from_json,
+  'par': hi_parametri(z) | from_json,
+  'nome_idro': 'Radiatori' if 'radiatori' in fonti else 'Pavimento',
 } -%}
 {%- set d = hi_decidi(ingressi) | from_json -%}
 {%- set nuovo_pav = d.pav if d.pav in ['on', 'off'] else pav_prec -%}

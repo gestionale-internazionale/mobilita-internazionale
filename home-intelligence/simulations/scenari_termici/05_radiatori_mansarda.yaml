@@ -1,0 +1,19 @@
+# Mansarda con termosifoni (fonte "radiatori"): inerzia media, tempi minimi
+# più brevi (20 min) e compensazione inerzia ridotta (0,25 h).
+nome: Radiatori mansarda
+stagione: inverno
+durata_ore: 12
+passo_min: 5
+fonte: auto
+nome_idro: Radiatori
+parametri: {pav_min_on: 20, pav_min_off: 20, inerzia_ore: 0.25}
+# modello fisico (inventato): radiatori con poca massa d'acqua, scambio rapido
+fisica: {t_mandata: 55, k_riscaldo: 3.0, k_scambio: 3.0, k_ambiente: 0.15, k_disperso: 0.12}
+iniziale: {t: 17.5, m: 17.5, esterna: 3.0}
+setpoint:
+  - {da_ora: 0, valore: 20.0}
+  - {da_ora: 8, valore: 18.0}
+attese:
+  max_commutazioni_pav: 24          # al massimo ~2 commutazioni/ora
+  errore_max_dopo_ore: {ore: 2, fino_a: 8, max: 1.0}
+  motivo_contiene: Radiatori

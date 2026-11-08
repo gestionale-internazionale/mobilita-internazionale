@@ -4,37 +4,38 @@
 
 | Dispositivo | Stato | Tipo | Marca / modello | Integrazione | Area | Etichette | Entità |
 |---|---|---|---|---|---|---|---|
-| Pompa di calore salotto (piano inferiore) | ⚪ non disponibile | pompa_di_calore | Daikin Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x | daikin | Zona giorno | `hi_pdc_inferiore`, `hi_monitorato` | — |
+| Pompa di calore salotto (piano inferiore) | ⚪ non disponibile | pompa_di_calore | Daikin Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x | daikin | Salotto | `hi_pdc_inferiore`, `hi_monitorato` | — |
 | Pompa di calore mansarda | ⚪ non disponibile | pompa_di_calore | Daikin Perfera serie FTXM-N (taglia da confermare) + adattatore Wi-Fi BRP069B4x | daikin | Mansarda principale | `hi_pdc_mansarda`, `hi_monitorato` | — |
-| Termostato pavimento piano inferiore | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Zona giorno | `hi_termostato_inferiore`, `hi_monitorato` | — |
-| Termostato pavimento mansarda | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Mansarda principale | `hi_termostato_mansarda`, `hi_monitorato` | — |
+| Termostato piano terra (pavimento radiante) | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Salotto | `hi_termostato_inferiore`, `hi_monitorato` | — |
+| Termostato mansarda (radiatori) | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Mansarda principale | `hi_termostato_mansarda`, `hi_monitorato` | — |
+| Termoarredi bagni piano terra (2) | ⚪ non disponibile | termoarredo | _da fornire_ | da_verificare | Bagno |  | — |
 | Inverter fotovoltaico (~6 kWp) | ⚪ non disponibile | inverter | _da fornire_ | da_verificare | Locale tecnico | `hi_en_pv_potenza`, `hi_en_pv_energia`, `hi_monitorato` | — |
 | Sistema di accumulo (10–15 kWh) | ⚪ non disponibile | batteria | _da fornire_ | da_verificare | Locale tecnico | `hi_en_batt_soc`, `hi_en_batt_carica_potenza`, `hi_en_batt_scarica_potenza`, `hi_en_batt_energia_carica`, `hi_en_batt_energia_scarica` | — |
 | Misura di scambio con la rete | ⚪ non disponibile | contatore | _da fornire_ | da_verificare | Locale tecnico | `hi_en_rete_prelievo_potenza`, `hi_en_rete_immissione_potenza`, `hi_en_rete_prelievo_energia`, `hi_en_rete_immissione_energia` | — |
-| Interruttore Lavanderia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | — | `hi_luce`, `hi_monitorato` | — |
-| Interruttore Studio | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | — | `hi_luce`, `hi_monitorato` | — |
-| Interruttore Bagno mansarda | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Mansarda principale | `hi_luce`, `hi_monitorato` | — |
-| Interruttore Scala | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | — | `hi_luce`, `hi_monitorato` | — |
-| Interruttore Box Silvia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | — | `hi_luce`, `hi_monitorato` | — |
+| Interruttore Lavanderia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Lavanderia (bagno cieco) | `hi_luce`, `hi_monitorato` | — |
+| Interruttore Studio | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Studio | `hi_luce`, `hi_monitorato` | — |
+| Interruttore Bagno mansarda | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Bagno mansarda | `hi_luce`, `hi_monitorato` | — |
+| Interruttore Scala | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Scala | `hi_luce`, `hi_monitorato` | — |
+| Interruttore Box Silvia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Box | `hi_luce`, `hi_monitorato` | — |
 | Altri interruttori Sonoff (elenco da completare) | ⚪ non disponibile | interruttore | SONOFF | sonofflan | — | `hi_luce` | — |
 | Coordinatore Zigbee USB (SONOFF) | ⚪ non disponibile | coordinatore | SONOFF | zha | Locale tecnico |  | — |
 | Smartphone con Companion App | ⚪ non disponibile | tracker | _da fornire_ | mobile_app | — |  | — |
-| [SIM] Sensori temperatura/umidità | 🟣 simulazione | sensore | _da fornire_ | template | Zona giorno | `hi_temp_inferiore`, `hi_simulazione` | `sensor.sim_temperatura_inferiore` |
-| [SIM] Umidità piano inferiore | 🟣 simulazione | sensore | _da fornire_ | template | Zona giorno | `hi_umidita_inferiore`, `hi_simulazione` | `sensor.sim_umidita_inferiore` |
+| [SIM] Sensori temperatura/umidità | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_temp_inferiore`, `hi_simulazione` | `sensor.sim_temperatura_inferiore` |
+| [SIM] Umidità piano inferiore | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_umidita_inferiore`, `hi_simulazione` | `sensor.sim_umidita_inferiore` |
 | [SIM] Temperatura mansarda | 🟣 simulazione | sensore | _da fornire_ | template | Mansarda principale | `hi_temp_mansarda`, `hi_simulazione` | `sensor.sim_temperatura_mansarda` |
 | [SIM] Temperatura esterna | 🟣 simulazione | sensore | _da fornire_ | template | Esterno | `hi_temp_esterna`, `hi_simulazione` | `sensor.sim_temperatura_esterna` |
-| [SIM] Daikin piano inferiore | 🟣 simulazione | pompa_di_calore | _da fornire_ | generic_thermostat | Zona giorno | `hi_pdc_inferiore`, `hi_monitorato`, `hi_simulazione` | `climate.sim_daikin_inferiore` |
+| [SIM] Daikin piano inferiore | 🟣 simulazione | pompa_di_calore | _da fornire_ | generic_thermostat | Salotto | `hi_pdc_inferiore`, `hi_monitorato`, `hi_simulazione` | `climate.sim_daikin_inferiore` |
 | [SIM] Daikin mansarda | 🟣 simulazione | pompa_di_calore | _da fornire_ | generic_thermostat | Mansarda principale | `hi_pdc_mansarda`, `hi_monitorato`, `hi_simulazione` | `climate.sim_daikin_mansarda` |
-| [SIM] Termostato pavimento inferiore | 🟣 simulazione | termostato | _da fornire_ | generic_thermostat | Zona giorno | `hi_termostato_inferiore`, `hi_monitorato`, `hi_simulazione` | `climate.sim_termostato_inferiore` |
+| [SIM] Termostato pavimento inferiore | 🟣 simulazione | termostato | _da fornire_ | generic_thermostat | Salotto | `hi_termostato_inferiore`, `hi_monitorato`, `hi_simulazione` | `climate.sim_termostato_inferiore` |
 | [SIM] Termostato pavimento mansarda | 🟣 simulazione | termostato | _da fornire_ | generic_thermostat | Mansarda principale | `hi_termostato_mansarda`, `hi_monitorato`, `hi_simulazione` | `climate.sim_termostato_mansarda` |
-| [SIM] Luce zona giorno | 🟣 simulazione | luce | _da fornire_ | template | Zona giorno | `hi_luce`, `hi_simulazione` | `light.sim_luce_giorno` |
+| [SIM] Luce zona giorno | 🟣 simulazione | luce | _da fornire_ | template | Salotto | `hi_luce`, `hi_simulazione` | `light.sim_luce_giorno` |
 | [SIM] Luce cucina | 🟣 simulazione | luce | _da fornire_ | template | Cucina | `hi_luce`, `hi_simulazione` | `light.sim_luce_cucina` |
-| [SIM] Luce ingresso | 🟣 simulazione | luce | _da fornire_ | template | Ingresso | `hi_luce`, `hi_luce_ingresso`, `hi_simulazione` | `light.sim_luce_ingresso` |
+| [SIM] Luce ingresso | 🟣 simulazione | luce | _da fornire_ | template | Disimpegno | `hi_luce`, `hi_luce_ingresso`, `hi_simulazione` | `light.sim_luce_ingresso` |
 | [SIM] Luce mansarda | 🟣 simulazione | luce | _da fornire_ | template | Mansarda principale | `hi_luce`, `hi_simulazione` | `light.sim_luce_mansarda` |
 | [SIM] Luce notturna mansarda | 🟣 simulazione | luce | _da fornire_ | template | Mansarda secondaria | `hi_luce`, `hi_luce_notturna`, `hi_simulazione` | `light.sim_luce_notte` |
-| [SIM] Presa TV (non essenziale) | 🟣 simulazione | presa | _da fornire_ | template | Zona giorno | `hi_carico_non_essenziale`, `hi_simulazione` | `switch.sim_presa_tv` |
+| [SIM] Presa TV (non essenziale) | 🟣 simulazione | presa | _da fornire_ | template | Salotto | `hi_carico_non_essenziale`, `hi_simulazione` | `switch.sim_presa_tv` |
 | [SIM] Presa frigorifero (critica) | 🟣 simulazione | presa | _da fornire_ | template | Cucina | `hi_critico`, `hi_monitorato`, `hi_simulazione` | `switch.sim_frigorifero` |
-| [SIM] Sensore movimento ingresso | 🟣 simulazione | sensore_movimento | _da fornire_ | template | Ingresso | `hi_presenza_supplementare`, `hi_simulazione` | `binary_sensor.sim_movimento_ingresso` |
+| [SIM] Sensore movimento ingresso | 🟣 simulazione | sensore_movimento | _da fornire_ | template | Disimpegno | `hi_presenza_supplementare`, `hi_simulazione` | `binary_sensor.sim_movimento_ingresso` |
 | [SIM] Finestra mansarda | 🟣 simulazione | sensore_apertura | _da fornire_ | template | Mansarda principale | `hi_finestra_mansarda`, `hi_simulazione` | `binary_sensor.sim_finestra_mansarda` |
 | [SIM] Fotovoltaico, batteria e scambio | 🟣 simulazione | inverter | _da fornire_ | template | Locale tecnico | `hi_simulazione` | `sensor.sim_fv_potenza`<br>`sensor.sim_fv_energia`<br>`sensor.sim_rete_potenza_netta`<br>`sensor.sim_rete_prelievo_energia`<br>`sensor.sim_rete_immissione_energia`<br>`sensor.sim_casa_potenza`<br>`sensor.sim_batteria_soc`<br>`sensor.sim_batteria_potenza_netta` |
 | [SIM] Smartphone persone simulate | 🟣 simulazione | tracker | _da fornire_ | device_tracker.see | — | `hi_simulazione` | `device_tracker.sim_telefono_1`<br>`device_tracker.sim_telefono_2` |
@@ -45,24 +46,25 @@
   - monitoraggio: stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna, ventola, swing, preset, potenza_compressore, energia, frequenza_compressore; comando: accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer
 - **Pompa di calore mansarda**: Stessa serie e stesso adattatore dell'unità del salotto: valgono le stesse capacità e avvertenze. IP attuale 192.168.1.16, da riservare nel router. La sigla completa (es. FTXM25N/35N…) serve solo per conoscere la potenza nominale, non per l'integrazione.
   - monitoraggio: stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna, ventola, swing, preset, potenza_compressore, energia, frequenza_compressore; comando: accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer
-- **Termostato pavimento piano inferiore**: Il supervisore NON comanda valvole, collettori o caldaie: agisce solo sul setpoint del termostato, dopo verifica dell'architettura dell'impianto. Il pavimento non viene MAI usato in raffrescamento.
+- **Termostato piano terra (pavimento radiante)**: Il supervisore NON comanda valvole, collettori o caldaie: agisce solo sul setpoint del termostato, dopo verifica dell'architettura dell'impianto. Il pavimento non viene MAI usato in raffrescamento.
   - monitoraggio: temperatura, setpoint, stato_richiesta_calore; comando: setpoint, modalita
-- **Termostato pavimento mansarda**: Vedi termostato_inferiore.
+- **Termostato mansarda (radiatori)**: Il termostato attuale regola ~3 termosifoni e il termoarredo del bagno (fonte "radiatori": inerzia media, parametri dedicati). Il supervisore agisce solo sul setpoint del termostato. Verificare cablaggio e cosa comanda (valvola di zona / pompa / caldaia) prima di sostituirlo.
   - monitoraggio: temperatura, setpoint, stato_richiesta_calore; comando: setpoint, modalita
+- **Termoarredi bagni piano terra (2)**: Non comandati dal supervisore. Se ELETTRICI, si potranno gestire con una presa/relè con misura di energia (orari e assenza); se IDRAULICI, seguono l'impianto e non vanno comandati separatamente senza valvola dedicata.
 - **Inverter fotovoltaico (~6 kWp)**: Assegnare a ogni entità SOLO l'etichetta del ruolo corrispondente (vedi docs/energia.md).
   - monitoraggio: potenza_fv, energia_fv; comando: —
 - **Sistema di accumulo (10–15 kWh)**: Nessun comando previsto nella prima versione.
   - monitoraggio: soc, potenza_carica, potenza_scarica, energia; comando: —
   - monitoraggio: prelievo, immissione; comando: —
-- **Interruttore Lavanderia**: Indicare ambiente/piano e se comanda una luce o un altro carico.
+- **Interruttore Lavanderia**: Confermare se comanda una luce o un altro carico.
   - monitoraggio: stato; comando: on_off
-- **Interruttore Studio**: Indicare ambiente/piano e se comanda una luce o un altro carico.
+- **Interruttore Studio**: Confermare se comanda una luce o un altro carico.
   - monitoraggio: stato; comando: on_off
-- **Interruttore Bagno mansarda**: Ambiente provvisorio, in futuro un'area 'Bagno mansarda' dedicata.
+- **Interruttore Bagno mansarda**: Confermare se comanda la luce del bagno.
   - monitoraggio: stato; comando: on_off
-- **Interruttore Scala**: Indicare ambiente/piano e se comanda una luce o un altro carico.
+- **Interruttore Scala**: Confermare se comanda una luce o un altro carico.
   - monitoraggio: stato; comando: on_off
-- **Interruttore Box Silvia**: Indicare ambiente/piano e se comanda una luce o un altro carico.
+- **Interruttore Box Silvia**: Confermare se comanda una luce o un altro carico.
   - monitoraggio: stato; comando: on_off
 - **Altri interruttori Sonoff (elenco da completare)**: L'elenco nell'app continua oltre i 5 dispositivi visibili nello screenshot.
   - monitoraggio: stato; comando: on_off

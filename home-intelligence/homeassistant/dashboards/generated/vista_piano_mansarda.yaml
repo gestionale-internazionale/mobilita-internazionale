@@ -28,7 +28,7 @@ sections:
     - type: state-icon
       entity: binary_sensor.hi_area_mansarda_principale_luci
       style:
-        left: 33.0%
+        left: 34.0%
         top: 50.0%
         --mdc-icon-size: 38px
       tap_action:
@@ -46,7 +46,7 @@ sections:
       - type: state-label
         entity: sensor.hi_area_mansarda_principale_temperatura
         style:
-          left: 33.0%
+          left: 34.0%
           top: 61.0%
           font-size: 15px
           font-weight: '600'
@@ -54,13 +54,44 @@ sections:
     - type: state-icon
       entity: binary_sensor.hi_area_mansarda_principale_occupata
       style:
-        left: 58.0%
+        left: 60.0%
+        top: 13.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_bagno_luci
+      style:
+        left: 82.0%
+        top: 25.0%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: mansarda_bagno
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_mansarda_bagno_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_mansarda_bagno_temperatura
+        style:
+          left: 82.0%
+          top: 36.0%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_mansarda_bagno_occupata
+      style:
+        left: 92.0%
         top: 13.0%
     - type: state-icon
       entity: binary_sensor.hi_area_mansarda_secondaria_luci
       style:
-        left: 81.0%
-        top: 50.0%
+        left: 82.0%
+        top: 71.5%
         --mdc-icon-size: 38px
       tap_action:
         action: perform-action
@@ -77,8 +108,8 @@ sections:
       - type: state-label
         entity: sensor.hi_area_mansarda_secondaria_temperatura
         style:
-          left: 81.0%
-          top: 61.0%
+          left: 82.0%
+          top: 82.5%
           font-size: 15px
           font-weight: '600'
           color: '#3a4150'
@@ -86,7 +117,7 @@ sections:
       entity: binary_sensor.hi_area_mansarda_secondaria_occupata
       style:
         left: 92.0%
-        top: 13.0%
+        top: 56.0%
   - type: tile
     entity: sensor.hi_mansarda_supervisore
     name: Clima Mansarda
@@ -98,7 +129,7 @@ sections:
   - type: heading
     heading: Mansarda principale (provvisoria)
     heading_style: subtitle
-    icon: mdi:bed
+    icon: mdi:home-roof
   - type: area
     area: mansarda_principale
     display_type: compact
@@ -114,6 +145,27 @@ sections:
     - type: area-controls
     features_position: inline
     navigation_path: /config/areas/area/mansarda_principale
+- type: grid
+  cards:
+  - type: heading
+    heading: Bagno mansarda
+    heading_style: subtitle
+    icon: mdi:shower
+  - type: area
+    area: mansarda_bagno
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/mansarda_bagno
 - type: grid
   cards:
   - type: heading

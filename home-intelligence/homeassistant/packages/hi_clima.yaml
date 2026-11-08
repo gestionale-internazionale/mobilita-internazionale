@@ -51,7 +51,7 @@ input_number:
     icon: mdi:snowflake-off
     mode: box
   hi_clima_pavimento_setback:
-    name: Setpoint termostato pavimento a riposo
+    name: Setpoint termostato (pavimento/radiatori) a riposo
     min: 7
     max: 18
     step: 0.5
@@ -74,22 +74,6 @@ input_number:
     step: 0.1
     unit_of_measurement: "°C"
     icon: mdi:rocket-launch
-    mode: box
-  hi_clima_pav_min_on:
-    name: Pavimento – tempo minimo acceso
-    min: 0
-    max: 360
-    step: 5
-    unit_of_measurement: min
-    icon: mdi:timer-outline
-    mode: box
-  hi_clima_pav_min_off:
-    name: Pavimento – tempo minimo spento
-    min: 0
-    max: 360
-    step: 5
-    unit_of_measurement: min
-    icon: mdi:timer-off-outline
     mode: box
   hi_clima_pdc_min_on:
     name: Pompa di calore – tempo minimo accesa
@@ -147,14 +131,6 @@ input_number:
     unit_of_measurement: "°C/h"
     icon: mdi:speedometer-slow
     mode: box
-  hi_clima_inerzia_ore:
-    name: Compensazione inerzia pavimento (0 = disattiva)
-    min: 0
-    max: 4
-    step: 0.25
-    unit_of_measurement: h
-    icon: mdi:weight
-    mode: box
   hi_clima_override_ore:
     name: Durata override manuale
     min: 0.5
@@ -207,8 +183,6 @@ script:
             - {e: input_number.hi_clima_pavimento_setback, v: 15}
             - {e: input_number.hi_clima_isteresi, v: 0.3}
             - {e: input_number.hi_clima_soglia_boost, v: 1.5}
-            - {e: input_number.hi_clima_pav_min_on, v: 60}
-            - {e: input_number.hi_clima_pav_min_off, v: 60}
             - {e: input_number.hi_clima_pdc_min_on, v: 20}
             - {e: input_number.hi_clima_pdc_min_off, v: 15}
             - {e: input_number.hi_clima_pdc_min_esterna, v: -15}
@@ -216,7 +190,6 @@ script:
             - {e: input_number.hi_clima_t_max_sicurezza, v: 28}
             - {e: input_number.hi_clima_boost_dopo_min, v: 90}
             - {e: input_number.hi_clima_variazione_min, v: 0.2}
-            - {e: input_number.hi_clima_inerzia_ore, v: 1.0}
             - {e: input_number.hi_clima_override_ore, v: 3}
             - {e: input_number.hi_clima_allarme_min, v: 12}
             - {e: input_number.hi_clima_allarme_max, v: 30}
@@ -315,7 +288,7 @@ script:
                             entity_id: "{{ repeat.item }}"
                           data:
                             temperature: "{{ [[setpoint, tmin] | max, tmax] | min }}"
-      # --- Pavimento radiante (solo setpoint del termostato, MAI raffrescamento)
+      # --- Pavimento radiante / radiatori (solo setpoint del termostato, MAI raffrescamento)
       - if:
           - condition: template
             value_template: "{{ consenso_pav and pav in ['on', 'off'] and pav_entita | count > 0 }}"

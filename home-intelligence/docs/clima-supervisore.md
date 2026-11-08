@@ -1,5 +1,14 @@
 # Supervisore termico
 
+## Impianto (informazioni del 08/11/2026)
+
+| Zona | Fonte idronica (termostato) | Pompa di calore | Note |
+|---|---|---|---|
+| Piano terra | **pavimento radiante** (un circuito) | Daikin Perfera FTXM71N2V1B | i 2 termoarredi dei bagni non sono comandati dal supervisore |
+| Mansarda | **radiatori** (~3 termosifoni + termoarredo bagno) | Daikin Perfera FTXM-N | inerzia minore: tempi minimi di 20 minuti e inerzia di 0,25 h di default |
+
+Nel codice la decisione `pav` indica la **fonte idronica** della zona, cioè pavimento o radiatori. Tempi minimi e compensazione dell'inerzia sono **per zona** (`input_number.hi_clima_<zona>_idro_min_on/off`, `hi_clima_<zona>_inerzia_ore`). Né il pavimento né i radiatori vengono mai usati in raffrescamento.
+
 ## Livelli
 
 1. **Misure:** `sensor.hi_<zona>_temperatura` (media dei sensori `hi_temp_<zona>` disponibili), umidità, finestre, `sensor.hi_<zona>_variazione` (derivata su 30 minuti, °C/h) e `sensor.hi_temperatura_esterna`.
@@ -23,9 +32,9 @@
 | esterna < soglia minima pdc (−15 °C) | — | off (esclusa) |
 | fonte preferita = pompa_di_calore | off | isteresi propria |
 
-**Temperatura prevista** = attuale + velocità di salita × `hi_clima_inerzia_ore` (1 h di default). Serve a compensare l'inerzia del massetto: il pavimento si spegne prima, così il calore accumulato non porta la stanza troppo oltre il setpoint.
+**Temperatura prevista** = attuale + velocità di salita × `hi_clima_<zona>_inerzia_ore` (1 h per il pavimento, 0,25 h per i radiatori). Serve a compensare l'inerzia del massetto: il pavimento si spegne prima, così il calore accumulato non porta la stanza troppo oltre il setpoint.
 
-**Tempi minimi** (anti-ciclo): pavimento 60 minuti acceso e 60 spento, pompa di calore 20 minuti accesa e 15 spenta. Non valgono nei casi immediati: spento, sovratemperatura, finestra aperta, cambio di stagione.
+**Tempi minimi** (anti-ciclo): pavimento 60 minuti acceso e 60 spento, radiatori 20 e 20, pompa di calore 20 minuti accesa e 15 spenta. Non valgono nei casi immediati: spento, sovratemperatura, finestra aperta, cambio di stagione.
 
 ## Estate
 

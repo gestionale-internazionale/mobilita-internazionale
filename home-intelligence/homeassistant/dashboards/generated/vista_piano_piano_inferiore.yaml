@@ -3,7 +3,7 @@
 # NON MODIFICARE A MANO: modifica il modello e riesegui
 #   python3 scripts/hi_tool.py generate
 # =============================================================================
-title: Piano inferiore
+title: Piano terra
 path: casa-piano_inferiore
 icon: mdi:home-floor-0
 subview: true
@@ -15,7 +15,7 @@ sections:
   column_span: 2
   cards:
   - type: heading
-    heading: Piano inferiore · planimetria
+    heading: Piano terra · planimetria
     heading_style: title
     icon: mdi:home-floor-0
   - type: markdown
@@ -26,41 +26,41 @@ sections:
     image: /local/floorplans/piano_inferiore.svg
     elements:
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_giorno_luci
+      entity: binary_sensor.hi_area_inferiore_salotto_luci
       style:
-        left: 30.5%
-        top: 34.0%
+        left: 28.0%
+        top: 32.5%
         --mdc-icon-size: 38px
       tap_action:
         action: perform-action
         perform_action: script.hi_area_luci_commuta
         data:
-          area: inferiore_giorno
+          area: inferiore_salotto
       hold_action:
         action: more-info
     - type: conditional
       conditions:
-      - entity: sensor.hi_area_inferiore_giorno_temperatura
+      - entity: sensor.hi_area_inferiore_salotto_temperatura
         state_not: unavailable
       elements:
       - type: state-label
-        entity: sensor.hi_area_inferiore_giorno_temperatura
+        entity: sensor.hi_area_inferiore_salotto_temperatura
         style:
-          left: 30.5%
-          top: 45.0%
+          left: 28.0%
+          top: 43.5%
           font-size: 15px
           font-weight: '600'
           color: '#3a4150'
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_giorno_occupata
+      entity: binary_sensor.hi_area_inferiore_salotto_occupata
       style:
-        left: 53.0%
+        left: 48.0%
         top: 13.0%
     - type: state-icon
       entity: binary_sensor.hi_area_inferiore_cucina_luci
       style:
-        left: 78.5%
-        top: 25.0%
+        left: 65.5%
+        top: 22.5%
         --mdc-icon-size: 38px
       tap_action:
         action: perform-action
@@ -77,92 +77,185 @@ sections:
       - type: state-label
         entity: sensor.hi_area_inferiore_cucina_temperatura
         style:
-          left: 78.5%
-          top: 36.0%
+          left: 65.5%
+          top: 33.5%
           font-size: 15px
           font-weight: '600'
           color: '#3a4150'
     - type: state-icon
       entity: binary_sensor.hi_area_inferiore_cucina_occupata
       style:
+        left: 71.0%
+        top: 13.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_studio_luci
+      style:
+        left: 87.5%
+        top: 22.5%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_studio
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_studio_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_studio_temperatura
+        style:
+          left: 87.5%
+          top: 33.5%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_studio_occupata
+      style:
         left: 92.0%
         top: 13.0%
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_ingresso_luci
+      entity: binary_sensor.hi_area_inferiore_disimpegno_luci
       style:
-        left: 78.5%
-        top: 71.5%
+        left: 76.0%
+        top: 49.0%
         --mdc-icon-size: 38px
       tap_action:
         action: perform-action
         perform_action: script.hi_area_luci_commuta
         data:
-          area: inferiore_ingresso
+          area: inferiore_disimpegno
       hold_action:
         action: more-info
     - type: conditional
       conditions:
-      - entity: sensor.hi_area_inferiore_ingresso_temperatura
+      - entity: sensor.hi_area_inferiore_disimpegno_temperatura
         state_not: unavailable
       elements:
       - type: state-label
-        entity: sensor.hi_area_inferiore_ingresso_temperatura
+        entity: sensor.hi_area_inferiore_disimpegno_temperatura
         style:
-          left: 78.5%
-          top: 82.5%
+          left: 76.0%
+          top: 60.0%
           font-size: 15px
           font-weight: '600'
           color: '#3a4150'
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_ingresso_occupata
+      entity: binary_sensor.hi_area_inferiore_disimpegno_occupata
       style:
         left: 92.0%
-        top: 56.0%
+        top: 50.0%
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_servizi_luci
+      entity: binary_sensor.hi_area_inferiore_bagno_luci
       style:
-        left: 30.5%
-        top: 80.5%
+        left: 65.5%
+        top: 76.5%
         --mdc-icon-size: 38px
       tap_action:
         action: perform-action
         perform_action: script.hi_area_luci_commuta
         data:
-          area: inferiore_servizi
+          area: inferiore_bagno
       hold_action:
         action: more-info
     - type: conditional
       conditions:
-      - entity: sensor.hi_area_inferiore_servizi_temperatura
+      - entity: sensor.hi_area_inferiore_bagno_temperatura
         state_not: unavailable
       elements:
       - type: state-label
-        entity: sensor.hi_area_inferiore_servizi_temperatura
+        entity: sensor.hi_area_inferiore_bagno_temperatura
         style:
-          left: 30.5%
-          top: 91.5%
+          left: 65.5%
+          top: 87.5%
           font-size: 15px
           font-weight: '600'
           color: '#3a4150'
     - type: state-icon
-      entity: binary_sensor.hi_area_inferiore_servizi_occupata
+      entity: binary_sensor.hi_area_inferiore_bagno_occupata
       style:
-        left: 53.0%
-        top: 74.0%
+        left: 71.0%
+        top: 66.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_lavanderia_luci
+      style:
+        left: 87.5%
+        top: 76.5%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_lavanderia
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_lavanderia_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_lavanderia_temperatura
+        style:
+          left: 87.5%
+          top: 87.5%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_lavanderia_occupata
+      style:
+        left: 92.0%
+        top: 66.0%
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_camera_luci
+      style:
+        left: 28.0%
+        top: 78.5%
+        --mdc-icon-size: 38px
+      tap_action:
+        action: perform-action
+        perform_action: script.hi_area_luci_commuta
+        data:
+          area: inferiore_camera
+      hold_action:
+        action: more-info
+    - type: conditional
+      conditions:
+      - entity: sensor.hi_area_inferiore_camera_temperatura
+        state_not: unavailable
+      elements:
+      - type: state-label
+        entity: sensor.hi_area_inferiore_camera_temperatura
+        style:
+          left: 28.0%
+          top: 89.5%
+          font-size: 15px
+          font-weight: '600'
+          color: '#3a4150'
+    - type: state-icon
+      entity: binary_sensor.hi_area_inferiore_camera_occupata
+      style:
+        left: 48.0%
+        top: 70.0%
   - type: tile
     entity: sensor.hi_inferiore_supervisore
-    name: Clima Piano inferiore
+    name: Clima Piano terra
     tap_action:
       action: navigate
       navigation_path: /home-intelligence/clima
 - type: grid
   cards:
   - type: heading
-    heading: Zona giorno (provvisoria)
+    heading: Salotto
     heading_style: subtitle
     icon: mdi:sofa
   - type: area
-    area: inferiore_giorno
+    area: inferiore_salotto
     display_type: compact
     alert_classes:
     - moisture
@@ -175,11 +268,11 @@ sections:
     features:
     - type: area-controls
     features_position: inline
-    navigation_path: /config/areas/area/inferiore_giorno
+    navigation_path: /config/areas/area/inferiore_salotto
 - type: grid
   cards:
   - type: heading
-    heading: Cucina (provvisoria)
+    heading: Cucina
     heading_style: subtitle
     icon: mdi:countertop
   - type: area
@@ -200,11 +293,11 @@ sections:
 - type: grid
   cards:
   - type: heading
-    heading: Ingresso (provvisoria)
+    heading: Studio
     heading_style: subtitle
-    icon: mdi:door
+    icon: mdi:desk
   - type: area
-    area: inferiore_ingresso
+    area: inferiore_studio
     display_type: compact
     alert_classes:
     - moisture
@@ -217,15 +310,15 @@ sections:
     features:
     - type: area-controls
     features_position: inline
-    navigation_path: /config/areas/area/inferiore_ingresso
+    navigation_path: /config/areas/area/inferiore_studio
 - type: grid
   cards:
   - type: heading
-    heading: Servizi (provvisoria)
+    heading: Disimpegno
     heading_style: subtitle
-    icon: mdi:shower
+    icon: mdi:door
   - type: area
-    area: inferiore_servizi
+    area: inferiore_disimpegno
     display_type: compact
     alert_classes:
     - moisture
@@ -238,4 +331,151 @@ sections:
     features:
     - type: area-controls
     features_position: inline
-    navigation_path: /config/areas/area/inferiore_servizi
+    navigation_path: /config/areas/area/inferiore_disimpegno
+- type: grid
+  cards:
+  - type: heading
+    heading: Bagno
+    heading_style: subtitle
+    icon: mdi:shower
+  - type: area
+    area: inferiore_bagno
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_bagno
+- type: grid
+  cards:
+  - type: heading
+    heading: Lavanderia (bagno cieco)
+    heading_style: subtitle
+    icon: mdi:washing-machine
+  - type: area
+    area: inferiore_lavanderia
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_lavanderia
+- type: grid
+  cards:
+  - type: heading
+    heading: Camera da letto
+    heading_style: subtitle
+    icon: mdi:bed
+  - type: area
+    area: inferiore_camera
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/inferiore_camera
+- type: grid
+  cards:
+  - type: heading
+    heading: Balcone salotto
+    heading_style: subtitle
+    icon: mdi:balcony
+  - type: area
+    area: balcone_salotto
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/balcone_salotto
+- type: grid
+  cards:
+  - type: heading
+    heading: Balcone cucina
+    heading_style: subtitle
+    icon: mdi:balcony
+  - type: area
+    area: balcone_cucina
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/balcone_cucina
+- type: grid
+  cards:
+  - type: heading
+    heading: Balcone studio
+    heading_style: subtitle
+    icon: mdi:balcony
+  - type: area
+    area: balcone_studio
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/balcone_studio
+- type: grid
+  cards:
+  - type: heading
+    heading: Balcone camera
+    heading_style: subtitle
+    icon: mdi:balcony
+  - type: area
+    area: balcone_camera
+    display_type: compact
+    alert_classes:
+    - moisture
+    - motion
+    - window
+    - door
+    sensor_classes:
+    - temperature
+    - humidity
+    features:
+    - type: area-controls
+    features_position: inline
+    navigation_path: /config/areas/area/balcone_camera

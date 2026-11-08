@@ -54,7 +54,7 @@ Durante lo sviluppo i test hanno trovato e permesso di correggere problemi reali
 - entity_id dei contatori derivati dal nome;
 - variabili di entità che non registrano le dipendenze;
 - persone senza tracker che rendevano "incerta" l'occupazione;
-- sovraelongazione dovuta all'inerzia del pavimento (aggiunta la compensazione `hi_clima_inerzia_ore`).
+- sovraelongazione dovuta all'inerzia del pavimento (aggiunta la compensazione dell'inerzia, ora per zona: `hi_clima_<zona>_inerzia_ore`).
 
 ## Schermate
 

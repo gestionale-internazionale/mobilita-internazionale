@@ -44,7 +44,7 @@ sections:
 - type: grid
   cards:
   - type: heading
-    heading: Piano inferiore
+    heading: Piano terra
     heading_style: title
     icon: mdi:home-thermometer
     badges:
@@ -111,7 +111,7 @@ sections:
       reale con etichetta <code>hi_pdc_inferiore</code>).</ha-alert>'
   - type: thermostat
     entity: climate.sim_termostato_inferiore
-    name: '[SIM] Termostato pavimento'
+    name: '[SIM] Termostato (pavimento radiante)'
     visibility:
     - condition: state
       entity: binary_sensor.hi_ambiente_simulazione
@@ -121,8 +121,8 @@ sections:
     - condition: state
       entity: binary_sensor.hi_ambiente_simulazione
       state: 'off'
-    content: '<ha-alert alert-type="info">Termostato pavimento: <b>non ancora disponibile</b> (nessun
-      dispositivo reale con etichetta <code>hi_termostato_inferiore</code>).</ha-alert>'
+    content: '<ha-alert alert-type="info">Termostato (pavimento radiante): <b>non ancora disponibile</b>
+      (nessun dispositivo reale con etichetta <code>hi_termostato_inferiore</code>).</ha-alert>'
   - type: entities
     title: Programma e setpoint
     state_color: true
@@ -134,6 +134,11 @@ sections:
     - input_datetime.hi_clima_inferiore_feriali_fine
     - input_datetime.hi_clima_inferiore_festivi_inizio
     - input_datetime.hi_clima_inferiore_festivi_fine
+    - type: section
+      label: 'Pavimento radiante: parametri'
+    - input_number.hi_clima_inferiore_idro_min_on
+    - input_number.hi_clima_inferiore_idro_min_off
+    - input_number.hi_clima_inferiore_inerzia_ore
   - type: entities
     title: Consensi all'attuazione
     state_color: true
@@ -141,7 +146,7 @@ sections:
     - entity: input_boolean.hi_clima_attuazione_pdc_inferiore
       name: Comando pompa di calore
     - entity: input_boolean.hi_clima_attuazione_pavimento_inferiore
-      name: Comando pavimento (termostato)
+      name: Comando termostato (pavimento radiante)
     - entity: input_text.hi_clima_inferiore_comandato
       name: Ultimo comando
   - type: history-graph
@@ -224,7 +229,7 @@ sections:
       reale con etichetta <code>hi_pdc_mansarda</code>).</ha-alert>'
   - type: thermostat
     entity: climate.sim_termostato_mansarda
-    name: '[SIM] Termostato pavimento'
+    name: '[SIM] Termostato (radiatori)'
     visibility:
     - condition: state
       entity: binary_sensor.hi_ambiente_simulazione
@@ -234,7 +239,7 @@ sections:
     - condition: state
       entity: binary_sensor.hi_ambiente_simulazione
       state: 'off'
-    content: '<ha-alert alert-type="info">Termostato pavimento: <b>non ancora disponibile</b> (nessun
+    content: '<ha-alert alert-type="info">Termostato (radiatori): <b>non ancora disponibile</b> (nessun
       dispositivo reale con etichetta <code>hi_termostato_mansarda</code>).</ha-alert>'
   - type: entities
     title: Programma e setpoint
@@ -247,6 +252,11 @@ sections:
     - input_datetime.hi_clima_mansarda_feriali_fine
     - input_datetime.hi_clima_mansarda_festivi_inizio
     - input_datetime.hi_clima_mansarda_festivi_fine
+    - type: section
+      label: 'Radiatori: parametri'
+    - input_number.hi_clima_mansarda_idro_min_on
+    - input_number.hi_clima_mansarda_idro_min_off
+    - input_number.hi_clima_mansarda_inerzia_ore
   - type: entities
     title: Consensi all'attuazione
     state_color: true
@@ -254,7 +264,7 @@ sections:
     - entity: input_boolean.hi_clima_attuazione_pdc_mansarda
       name: Comando pompa di calore
     - entity: input_boolean.hi_clima_attuazione_pavimento_mansarda
-      name: Comando pavimento (termostato)
+      name: Comando termostato (radiatori)
     - entity: input_text.hi_clima_mansarda_comandato
       name: Ultimo comando
   - type: history-graph
@@ -278,14 +288,11 @@ sections:
     entities:
     - input_number.hi_clima_isteresi
     - input_number.hi_clima_soglia_boost
-    - input_number.hi_clima_pav_min_on
-    - input_number.hi_clima_pav_min_off
     - input_number.hi_clima_pdc_min_on
     - input_number.hi_clima_pdc_min_off
     - input_number.hi_clima_pdc_min_esterna
     - input_number.hi_clima_boost_dopo_min
     - input_number.hi_clima_variazione_min
-    - input_number.hi_clima_inerzia_ore
     - type: section
       label: Setpoint globali
     - input_number.hi_clima_assenza
