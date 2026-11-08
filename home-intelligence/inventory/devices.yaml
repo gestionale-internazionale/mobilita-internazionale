@@ -70,7 +70,7 @@ dispositivi:
       nominale, non per l'integrazione.
 
   - id: termostato_inferiore
-    nome: Termostato piano terra (pavimento radiante)
+    nome: Termostato piano inferiore (pavimento radiante)
     marca: null                   # acquistato, modello DA FORNIRE
     modello: null
     tipo: termostato
@@ -82,9 +82,13 @@ dispositivi:
     monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
     comando: [setpoint, modalita]
     note: >-
-      Il supervisore NON comanda valvole, collettori o caldaie: agisce solo sul
-      setpoint del termostato, dopo verifica dell'architettura dell'impianto.
-      Il pavimento non viene MAI usato in raffrescamento.
+      Termostato attuale: a batteria, 2 fili, contatto pulito (on/off) che
+      apre la valvola di zona (forse anche un circolatore). Acqua calda dalla
+      caldaia CONDOMINIALE: nessun comando alla caldaia. Il sostituto smart
+      deve avere relè a contatto pulito (NO/COM, carico ≥ 1 A) e funzionare A
+      BATTERIA (nessun neutro/230 V al muro). Verificare la compatibilità del
+      modello acquistato prima dell'installazione.
+      Comanda il circuito a pavimento del piano inferiore.
 
   - id: termostato_mansarda
     nome: Termostato mansarda (radiatori)
@@ -99,17 +103,20 @@ dispositivi:
     monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
     comando: [setpoint, modalita]
     note: >-
-      Il termostato attuale regola ~3 termosifoni e il termoarredo del bagno
-      (fonte "radiatori": inerzia media, parametri dedicati). Il supervisore
-      agisce solo sul setpoint del termostato. Verificare cablaggio e cosa
-      comanda (valvola di zona / pompa / caldaia) prima di sostituirlo.
+      Termostato attuale: a batteria, 2 fili, contatto pulito (on/off) che
+      apre la valvola di zona (forse anche un circolatore). Acqua calda dalla
+      caldaia CONDOMINIALE: nessun comando alla caldaia. Il sostituto smart
+      deve avere relè a contatto pulito (NO/COM, carico ≥ 1 A) e funzionare A
+      BATTERIA (nessun neutro/230 V al muro). Verificare la compatibilità del
+      modello acquistato prima dell'installazione.
+      Comanda ~3 termosifoni + termoarredo del bagno (fonte "radiatori").
 
-  - id: termoarredi_piano_terra
-    nome: Termoarredi bagni piano terra (2)
+  - id: termoarredi_piano_inferiore
+    nome: Termoarredi ad acqua bagni piano inferiore (2)
     marca: null
     modello: null
     tipo: termoarredo
-    integrazione: da_verificare     # idraulici (stesso impianto) o elettrici?
+    integrazione: nessuna           # idraulici: seguono la valvola di zona del piano
     area: inferiore_bagno           # uno in Bagno, uno in Lavanderia
     stato: non_disponibile
     entita: []
@@ -117,9 +124,9 @@ dispositivi:
     monitoraggio: []
     comando: []
     note: >-
-      Non comandati dal supervisore. Se ELETTRICI, si potranno gestire con una
-      presa/relè con misura di energia (orari e assenza); se IDRAULICI, seguono
-      l'impianto e non vanno comandati separatamente senza valvola dedicata.
+      Ad acqua, alimentati dall'impianto centralizzato: si scaldano quando la
+      valvola di zona è aperta. Non comandabili separatamente senza una testa
+      termostatica smart dedicata (eventuale sviluppo futuro, es. Zigbee).
 
   # ---------------------------------------------------------------------------
   # ENERGIA – impianto previsto (marca inverter non nota)
@@ -393,7 +400,7 @@ dispositivi:
     nome: "[SIM] Luce notturna mansarda"
     tipo: luce
     integrazione: template
-    area: mansarda_secondaria
+    area: mansarda_principale
     stato: simulazione
     entita: [light.sim_luce_notte]
     etichette: [hi_luce, hi_luce_notturna, hi_simulazione]

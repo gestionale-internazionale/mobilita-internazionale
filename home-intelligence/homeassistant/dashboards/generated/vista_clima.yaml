@@ -31,6 +31,19 @@ sections:
     entity: sensor.hi_temperatura_esterna
     name: Esterna
   - type: tile
+    entity: binary_sensor.hi_centrale_disponibile
+    name: Caldaia condominiale
+  - type: entities
+    title: Riscaldamento condominiale
+    state_color: true
+    entities:
+    - entity: input_boolean.hi_centrale_vincolo_orari
+      name: Considera gli orari
+    - entity: input_datetime.hi_centrale_inizio
+      name: Accensione
+    - entity: input_datetime.hi_centrale_fine
+      name: Spegnimento
+  - type: tile
     entity: input_boolean.hi_clima_controllo_automatico
     name: Controllo automatico (consenso generale)
     icon: mdi:shield-lock-open
@@ -44,7 +57,7 @@ sections:
 - type: grid
   cards:
   - type: heading
-    heading: Piano terra
+    heading: Piano inferiore
     heading_style: title
     icon: mdi:home-thermometer
     badges:

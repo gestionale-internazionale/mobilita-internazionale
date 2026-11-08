@@ -307,6 +307,19 @@ def test_finestra_aperta_spegne_pdc(ha):
     off(ha, "input_boolean.sim_finestra_mansarda_stato")
 
 
+def test_orari_caldaia_condominiale(ha):
+    ha.call("input_select", "select_option", entity_id="input_select.hi_clima_stagione", option="inverno")
+    ha.call("input_datetime", "set_datetime", entity_id="input_datetime.hi_centrale_inizio", time="00:00:00")
+    ha.call("input_datetime", "set_datetime", entity_id="input_datetime.hi_centrale_fine", time="00:00:01")
+    on(ha, "input_boolean.hi_centrale_vincolo_orari")
+    try:
+        ha.wait_for(lambda: ha.s("binary_sensor.hi_centrale_disponibile") == "off", 10, msg="caldaia off")
+        ha.wait_for(lambda: ha.attr("sensor.hi_inferiore_supervisore", "primaria") == "pdc", 15, msg="primaria pdc")
+    finally:
+        off(ha, "input_boolean.hi_centrale_vincolo_orari")
+    ha.wait_for(lambda: ha.s("binary_sensor.hi_centrale_disponibile") == "on", 10, msg="caldaia on")
+
+
 def test_setpoint_segue_modalita_casa(pronto):
     ha = pronto
     ha.call("input_select", "select_option", entity_id="input_select.hi_clima_stagione", option="inverno")

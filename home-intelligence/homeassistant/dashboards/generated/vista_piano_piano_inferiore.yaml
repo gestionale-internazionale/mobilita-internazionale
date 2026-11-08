@@ -3,7 +3,7 @@
 # NON MODIFICARE A MANO: modifica il modello e riesegui
 #   python3 scripts/hi_tool.py generate
 # =============================================================================
-title: Piano terra
+title: Piano inferiore
 path: casa-piano_inferiore
 icon: mdi:home-floor-0
 subview: true
@@ -15,7 +15,7 @@ sections:
   column_span: 2
   cards:
   - type: heading
-    heading: Piano terra · planimetria
+    heading: Piano inferiore · planimetria
     heading_style: title
     icon: mdi:home-floor-0
   - type: markdown
@@ -244,7 +244,7 @@ sections:
         top: 70.0%
   - type: tile
     entity: sensor.hi_inferiore_supervisore
-    name: Clima Piano terra
+    name: Clima Piano inferiore
     tap_action:
       action: navigate
       navigation_path: /home-intelligence/clima

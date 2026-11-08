@@ -65,3 +65,15 @@ Secondo testimonianze della community, il MINIR4 non ha la "DIY mode", ma il con
   - **prese smart con misura di energia** per gli elettrodomestici programmabili (`hi_carico_programmabile`). Le prese Zigbee fanno anche da ripetitori.
 
 Fonti: [SonoffLAN](https://github.com/alexxit/sonofflan) · [MINIR4 e modalità LAN (forum eWeLink)](https://forum.ewelink.cc/t/how-to-enable-diy-mode-on-sonoff-minir4-without-soldering/207592) · [Dongle Plus MG24](https://sonoff.tech/de-eu/products/sonoff-zigbee-thread-usb-dongle-dongle-plus-mg24) · [MG24 e ZHA (community HA)](https://community.home-assistant.io/t/itead-s-new-sonoff-dongle-plus-mg24-based-on-silicon-labs-efr32mg24-radio-microcontroller-soc-has-now-been-launched/926690)
+
+## 4. Termostati smart (in arrivo) – requisiti di compatibilità
+
+Situazione attuale: termostati **a batteria**, 2 fili, **contatto pulito** che apre la valvola di zona. L'acqua calda viene dalla caldaia condominiale.
+
+Il termostato sostitutivo deve avere:
+1. un **relè a contatto pulito** (morsetti NO/COM, a volte indicati come "caldaia" o "boiler"), con un carico ammesso di almeno 1 A;
+2. **alimentazione a batteria**: al muro non arrivano neutro né 230 V. I modelli che chiedono un "filo C" o la 230 V non vanno bene senza modificare l'impianto;
+3. **integrazione locale con HA**: Zigbee (con il dongle previsto), Matter, oppure un'integrazione core locale;
+4. un'entità `climate` con `set_temperature`, che è l'unico comando usato dal supervisore.
+
+Se il modello acquistato è Wi-Fi solo-cloud o richiede la 230 V, valutiamo insieme le alternative prima di installarlo.

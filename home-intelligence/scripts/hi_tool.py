@@ -415,6 +415,7 @@ def gen_zone(house: dict) -> str:
           - input_select.hi_clima_fonte_{i}
           - input_boolean.hi_clima_override_{i}
           - binary_sensor.hi_{i}_finestra
+          - binary_sensor.hi_centrale_disponibile
     sensor:
       - name: {_q('Supervisore ' + n)}
         unique_id: hi_{i}_supervisore
@@ -736,6 +737,11 @@ def gen_view_clima(house: dict, devices: dict) -> str:
             {"type": "tile", "entity": "input_select.hi_profilo_energia", "name": "Profilo",
              "features": [{"type": "select-options"}], "features_position": "bottom"},
             {"type": "tile", "entity": "sensor.hi_temperatura_esterna", "name": "Esterna"},
+            {"type": "tile", "entity": "binary_sensor.hi_centrale_disponibile", "name": "Caldaia condominiale"},
+            {"type": "entities", "title": "Riscaldamento condominiale", "state_color": True, "entities": [
+                {"entity": "input_boolean.hi_centrale_vincolo_orari", "name": "Considera gli orari"},
+                {"entity": "input_datetime.hi_centrale_inizio", "name": "Accensione"},
+                {"entity": "input_datetime.hi_centrale_fine", "name": "Spegnimento"}]},
             {"type": "tile", "entity": "input_boolean.hi_clima_controllo_automatico",
              "name": "Controllo automatico (consenso generale)", "icon": "mdi:shield-lock-open",
              "tap_action": {"action": "more-info"}},

@@ -9,8 +9,7 @@
     .wm { font: 600 16px system-ui, sans-serif; fill: #b0563a; letter-spacing: 1px; }
   </style>
   <rect class="bg" x="0" y="0" width="1000" height="640" rx="20"/>
-  <g class="room"><rect x="30" y="32" width="620" height="576" rx="14"/><text x="48" y="68" class="name">Mansarda principale</text><text x="48" y="92" class="hint">provvisoria</text></g>
-  <g class="room"><rect x="670" y="32" width="300" height="256" rx="14"/><text x="688" y="68" class="name">Bagno mansarda</text></g>
-  <g class="room"><rect x="670" y="307" width="300" height="301" rx="14"/><text x="688" y="343" class="name">Mansarda secondaria</text><text x="688" y="367" class="hint">provvisoria</text></g>
+  <g class="room"><rect x="30" y="32" width="700" height="576" rx="14"/><text x="48" y="68" class="name">Open space mansarda</text></g>
+  <g class="room"><rect x="750" y="32" width="220" height="288" rx="14"/><text x="768" y="68" class="name">Bagno mansarda</text></g>
   <text x="980" y="624" class="wm" text-anchor="end">PLANIMETRIA PROVVISORIA · schema non in scala · sostituibile</text>
 </svg>

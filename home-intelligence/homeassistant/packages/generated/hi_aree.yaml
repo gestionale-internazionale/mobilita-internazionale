@@ -547,9 +547,9 @@ template:
         availability: >
           {{ area_entities('balcone_camera') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
-  # --- Mansarda principale (mansarda_principale) ---
+  # --- Open space mansarda (mansarda_principale) ---
   - binary_sensor:
-      - name: "Luci · Mansarda principale"
+      - name: "Luci · Open space mansarda"
         unique_id: hi_area_mansarda_principale_luci
         default_entity_id: binary_sensor.hi_area_mansarda_principale_luci
         device_class: light
@@ -566,7 +566,7 @@ template:
           totali: >
             {{ (area_entities('mansarda_principale') | select('match', 'light\\.') | list
                  + area_entities('mansarda_principale') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
-      - name: "Occupazione · Mansarda principale"
+      - name: "Occupazione · Open space mansarda"
         unique_id: hi_area_mansarda_principale_occupata
         default_entity_id: binary_sensor.hi_area_mansarda_principale_occupata
         device_class: occupancy
@@ -583,7 +583,7 @@ template:
           {% endfor %}
           {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
   - sensor:
-      - name: "Temperatura · Mansarda principale"
+      - name: "Temperatura · Open space mansarda"
         unique_id: hi_area_mansarda_principale_temperatura
         default_entity_id: sensor.hi_area_mansarda_principale_temperatura
         device_class: temperature
@@ -644,55 +644,6 @@ template:
           {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
         availability: >
           {{ area_entities('mansarda_bagno') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
-             | map('states') | select('is_number') | list | count > 0 }}
-  # --- Mansarda secondaria (mansarda_secondaria) ---
-  - binary_sensor:
-      - name: "Luci · Mansarda secondaria"
-        unique_id: hi_area_mansarda_secondaria_luci
-        default_entity_id: binary_sensor.hi_area_mansarda_secondaria_luci
-        device_class: light
-        icon: "{{ 'mdi:lightbulb-on' if this.state == 'on' else 'mdi:lightbulb-outline' }}"
-        state: >
-          {% set l = (area_entities('mansarda_secondaria') | select('match', 'light\\.') | list
-                      + area_entities('mansarda_secondaria') | select('in', label_entities('hi_luce')) | list) | unique | list %}
-          {{ l | select('is_state', 'on') | list | count > 0 }}
-        attributes:
-          accese: >
-            {% set l = (area_entities('mansarda_secondaria') | select('match', 'light\\.') | list
-                        + area_entities('mansarda_secondaria') | select('in', label_entities('hi_luce')) | list) | unique | list %}
-            {{ l | select('is_state', 'on') | list | count }}
-          totali: >
-            {{ (area_entities('mansarda_secondaria') | select('match', 'light\\.') | list
-                 + area_entities('mansarda_secondaria') | select('in', label_entities('hi_luce')) | list) | unique | list | count }}
-      - name: "Occupazione · Mansarda secondaria"
-        unique_id: hi_area_mansarda_secondaria_occupata
-        default_entity_id: binary_sensor.hi_area_mansarda_secondaria_occupata
-        device_class: occupancy
-        state: >
-          {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('mansarda_secondaria') | select('match', 'binary_sensor\\.') %}
-            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
-          {% endfor %}
-          {{ ns.l | select('is_state', 'on') | list | count > 0 }}
-        availability: >
-          {% set ns = namespace(l=[]) %}
-          {% for e in area_entities('mansarda_secondaria') | select('match', 'binary_sensor\\.') %}
-            {% if state_attr(e, 'device_class') in ['motion', 'occupancy', 'presence'] %}{% set ns.l = ns.l + [e] %}{% endif %}
-          {% endfor %}
-          {{ ns.l | reject('is_state', ['unavailable', 'unknown']) | list | count > 0 }}
-  - sensor:
-      - name: "Temperatura · Mansarda secondaria"
-        unique_id: hi_area_mansarda_secondaria_temperatura
-        default_entity_id: sensor.hi_area_mansarda_secondaria_temperatura
-        device_class: temperature
-        unit_of_measurement: "°C"
-        state_class: measurement
-        state: >
-          {% set v = area_entities('mansarda_secondaria') | select('match', 'sensor\\.')
-             | select('is_state_attr', 'device_class', 'temperature') | map('states') | select('is_number') | map('float') | list %}
-          {{ (v | sum / v | count) | round(1) if v | count > 0 else none }}
-        availability: >
-          {{ area_entities('mansarda_secondaria') | select('match', 'sensor\\.') | select('is_state_attr', 'device_class', 'temperature')
              | map('states') | select('is_number') | list | count > 0 }}
   # --- Scala (scala) ---
   - binary_sensor:

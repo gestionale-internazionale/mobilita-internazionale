@@ -7,8 +7,8 @@
 #   python3 scripts/hi_tool.py generate     # rigenera pacchetti, viste, planimetrie
 #   python3 scripts/hi_tool.py sync --apply # allinea floors/areas/labels in HA
 #
-# Ambienti del piano terra: comunicati dall'utente. Mansarda: in parte
-# provvisoria. La disposizione grafica è schematica (manca la mappa).
+# Ambienti comunicati dall'utente (piano inferiore = 2° piano; mansarda =
+# open space + bagno). La disposizione grafica è schematica (manca la mappa).
 #
 # Convenzioni:
 #  - gli "id" sono slug minuscoli [a-z0-9_]; diventano floor_id / area_id in HA
@@ -24,23 +24,23 @@ planimetria:
   altezza: 640
 
 piani:
-  - id: piano_inferiore           # id stabile; nome visualizzato "Piano terra"
-    nome: Piano terra
+  - id: piano_inferiore           # 2° piano dell'edificio (piano inferiore dell'appartamento)
+    nome: Piano inferiore
     livello: 0
     icona: mdi:home-floor-0
     # Per usare una planimetria reale: copia l'immagine in
     # homeassistant/www/floorplans/ e indica qui il nome file.
-    immagine: null            # es. piano_terra_reale.png
+    immagine: null            # es. piano_inferiore_reale.png
   - id: mansarda
     nome: Mansarda
     livello: 1
     icona: mdi:home-roof
     immagine: null
 
-# Ambienti del piano terra comunicati il 08/11/2026. La DISPOSIZIONE sulla
+# Ambienti comunicati il 08/11/2026. La DISPOSIZIONE sulla
 # planimetria resta schematica finché non arriva una mappa di dettaglio.
 aree:
-  # --- Piano terra ---------------------------------------------------------
+  # --- Piano inferiore (2° piano) ---------------------------------------------------------
   - id: inferiore_salotto
     nome: Salotto
     piano: piano_inferiore
@@ -89,25 +89,19 @@ aree:
   - {id: balcone_cucina, nome: Balcone cucina, piano: piano_inferiore, icona: mdi:balcony, provvisoria: false}
   - {id: balcone_studio, nome: Balcone studio, piano: piano_inferiore, icona: mdi:balcony, provvisoria: false}
   - {id: balcone_camera, nome: Balcone camera, piano: piano_inferiore, icona: mdi:balcony, provvisoria: false}
-  # --- Mansarda (in parte PROVVISORIA) -------------------------------------
+  # --- Mansarda: open space + bagno -----------------------------------------
   - id: mansarda_principale
-    nome: Mansarda principale
+    nome: Open space mansarda
     piano: mansarda
     icona: mdi:home-roof
-    provvisoria: true
-    planimetria: {x: 3, y: 5, w: 62, h: 90}
+    provvisoria: false
+    planimetria: {x: 3, y: 5, w: 70, h: 90}
   - id: mansarda_bagno
     nome: Bagno mansarda
     piano: mansarda
     icona: mdi:shower
     provvisoria: false
-    planimetria: {x: 67, y: 5, w: 30, h: 40}
-  - id: mansarda_secondaria
-    nome: Mansarda secondaria
-    piano: mansarda
-    icona: mdi:desk
-    provvisoria: true
-    planimetria: {x: 67, y: 48, w: 30, h: 47}
+    planimetria: {x: 75, y: 5, w: 22, h: 45}
   # --- Aree senza piano ----------------------------------------------------
   - {id: scala, nome: Scala, piano: null, icona: mdi:stairs, provvisoria: false}
   - {id: box, nome: Box, piano: null, icona: mdi:garage, provvisoria: false}
@@ -123,10 +117,11 @@ aree:
 # I parametri "idronico" (tempi minimi, inerzia) sono per zona.
 zone_termiche:
   - id: inferiore
-    nome: Piano terra
+    nome: Piano inferiore
     piano: piano_inferiore
-    # Il termostato comanda un circuito di pavimento radiante. I termoarredi
-    # dei due bagni non sono comandati dal supervisore.
+    # Termostato a batteria, contatto pulito → valvola di zona (forse con
+    # circolatore) del circuito a pavimento. Acqua calda dalla caldaia
+    # CONDOMINIALE. I termoarredi ad acqua dei bagni seguono l'impianto.
     fonti: [pavimento, pompa_di_calore]
     predefiniti:
       comfort: 20.5
@@ -140,7 +135,8 @@ zone_termiche:
   - id: mansarda
     nome: Mansarda
     piano: mansarda
-    # Il termostato regola ~3 termosifoni e il termoarredo del bagno.
+    # Termostato a batteria, contatto pulito → valvola di zona dei ~3
+    # termosifoni e del termoarredo (ad acqua) del bagno. Caldaia condominiale.
     fonti: [radiatori, pompa_di_calore]
     predefiniti:
       comfort: 20.0
@@ -183,20 +179,20 @@ etichette:
   - {id: hi_presenza_supplementare, nome: "HI · Presenza supplementare", icona: mdi:motion-sensor, colore: green,
      descrizione: "Sensori di movimento/occupazione che indicano casa occupata"}
   # --- Clima: sensori e attuatori per zona ---
-  - {id: hi_temp_inferiore, nome: "HI · Temperatura piano terra", icona: mdi:thermometer, colore: deep-orange,
+  - {id: hi_temp_inferiore, nome: "HI · Temperatura piano inferiore", icona: mdi:thermometer, colore: deep-orange,
      descrizione: "Sensori di temperatura ambiente della zona inferiore (media)"}
   - {id: hi_temp_mansarda, nome: "HI · Temperatura mansarda", icona: mdi:thermometer, colore: deep-orange,
      descrizione: "Sensori di temperatura ambiente della mansarda (media)"}
-  - {id: hi_umidita_inferiore, nome: "HI · Umidità piano terra", icona: mdi:water-percent, colore: cyan}
+  - {id: hi_umidita_inferiore, nome: "HI · Umidità piano inferiore", icona: mdi:water-percent, colore: cyan}
   - {id: hi_umidita_mansarda, nome: "HI · Umidità mansarda", icona: mdi:water-percent, colore: cyan}
   - {id: hi_temp_esterna, nome: "HI · Temperatura esterna", icona: mdi:thermometer-lines, colore: light-blue}
-  - {id: hi_finestra_inferiore, nome: "HI · Finestre piano terra", icona: mdi:window-open-variant, colore: brown}
+  - {id: hi_finestra_inferiore, nome: "HI · Finestre piano inferiore", icona: mdi:window-open-variant, colore: brown}
   - {id: hi_finestra_mansarda, nome: "HI · Finestre mansarda", icona: mdi:window-open-variant, colore: brown}
-  - {id: hi_pdc_inferiore, nome: "HI · Pompa di calore piano terra", icona: mdi:heat-pump, colore: purple,
+  - {id: hi_pdc_inferiore, nome: "HI · Pompa di calore piano inferiore", icona: mdi:heat-pump, colore: purple,
      descrizione: "Entità climate Daikin della zona inferiore"}
   - {id: hi_pdc_mansarda, nome: "HI · Pompa di calore mansarda", icona: mdi:heat-pump, colore: purple}
-  - {id: hi_termostato_inferiore, nome: "HI · Termostato piano terra (pavimento)", icona: mdi:heating-coil, colore: pink,
-     descrizione: "Entità climate del termostato che governa il pavimento radiante del piano terra"}
+  - {id: hi_termostato_inferiore, nome: "HI · Termostato piano inferiore (pavimento)", icona: mdi:heating-coil, colore: pink,
+     descrizione: "Entità climate del termostato che governa il pavimento radiante del piano inferiore"}
   - {id: hi_termostato_mansarda, nome: "HI · Termostato mansarda (radiatori)", icona: mdi:radiator, colore: pink,
      descrizione: "Entità climate del termostato che governa i termosifoni della mansarda"}
   # --- Energia: ruoli indipendenti dal produttore dell'inverter ---

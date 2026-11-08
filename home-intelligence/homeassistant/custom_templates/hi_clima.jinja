@@ -53,7 +53,8 @@
 {#- --------------------------------------------------------------------------
     Decisione (funzione pura)
     i: stagione, modo, override, temp, setpoint, variazione, esterna, finestra,
-       fonte (auto|pavimento|pompa_di_calore), disp_pav, disp_pdc,
+       fonte (auto|pavimento|radiatori|pompa_di_calore), disp_pav, disp_pdc,
+       centrale (bool: acqua calda condominiale disponibile, default true),
        pav_prec, pdc_prec, pav_min_da, pdc_min_da (minuti dall'ultimo cambio),
        par: {isteresi, soglia_boost, pav_min_on, pav_min_off, pdc_min_on,
              pdc_min_off, pdc_min_esterna, t_min_sic, t_max_sic,
@@ -87,7 +88,8 @@
   {%- set err = sp - t -%}
   {%- set r.errore = err | round(2) -%}
   {%- set pdc_ok = i.disp_pdc and (est is none or est >= p.pdc_min_esterna) -%}
-  {%- set pav_ok = i.disp_pav -%}
+  {%- set centrale = i.centrale if i.centrale is defined else true -%}
+  {%- set pav_ok = i.disp_pav and centrale -%}
   {%- if i.fonte == 'pompa_di_calore' and pdc_ok -%}{%- set r.primaria = 'pdc' -%}
   {%- elif pav_ok -%}{%- set r.primaria = 'pav' -%}
   {%- elif pdc_ok -%}{%- set r.primaria = 'pdc' -%}
@@ -131,6 +133,9 @@
     {%- endif -%}
     {%- set r.pav = 'off' if pav_ok else 'invariato' -%}
     {%- set r.motivo = 'Pompa di calore come fonte principale' -%}
+  {%- endif -%}
+  {%- if i.disp_pav and not centrale -%}
+    {%- set r.motivo = r.motivo ~ '; riscaldamento condominiale non disponibile (fuori orario)' -%}
   {%- endif -%}
   {%- if i.disp_pdc and est is not none and est < p.pdc_min_esterna and r.stato == '' -%}
     {%- set r.motivo = r.motivo ~ '; pompa di calore esclusa (esterna ' ~ est ~ ' °C)' -%}
@@ -262,6 +267,7 @@
   'esterna': states('sensor.hi_temperatura_esterna') | float(none),
   'finestra': is_state('binary_sensor.hi_' ~ z ~ '_finestra', 'on'),
   'fonte': states('input_select.hi_clima_fonte_' ~ z),
+  'centrale': not is_state('binary_sensor.hi_centrale_disponibile', 'off'),
   'disp_pav': ('pavimento' in fonti or 'radiatori' in fonti) and (hi_disponibili('hi_termostato_' ~ z) | from_json | count > 0),
   'disp_pdc': 'pompa_di_calore' in fonti and (hi_disponibili('hi_pdc_' ~ z) | from_json | count > 0),
   'pav_prec': pav_prec,

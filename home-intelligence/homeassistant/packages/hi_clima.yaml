@@ -20,9 +20,26 @@ input_select:
     options: [inverno, estate, spento]
 
 input_boolean:
+  # Riscaldamento centralizzato condominiale: l'acqua calda per pavimento e
+  # radiatori arriva solo negli orari della caldaia condominiale. Se il vincolo
+  # è attivo, fuori orario il supervisore non conta sulla fonte idronica e,
+  # se disponibile, usa la pompa di calore.
+  hi_centrale_vincolo_orari:
+    name: Considera gli orari del riscaldamento condominiale
+    icon: mdi:office-building-cog
   hi_clima_controllo_automatico:
     name: Controllo automatico clima (consenso generale)
     icon: mdi:shield-lock-open
+
+input_datetime:
+  hi_centrale_inizio:
+    name: Riscaldamento condominiale – accensione
+    has_date: false
+    has_time: true
+  hi_centrale_fine:
+    name: Riscaldamento condominiale – spegnimento
+    has_date: false
+    has_time: true
 
 input_number:
   # Setpoint globali di assenza/vacanza
@@ -157,6 +174,25 @@ input_number:
     mode: box
 
 template:
+  - binary_sensor:
+      - name: Riscaldamento condominiale disponibile
+        unique_id: hi_centrale_disponibile
+        default_entity_id: binary_sensor.hi_centrale_disponibile
+        icon: mdi:office-building-marker
+        # on = acqua calda disponibile (o vincolo orario non attivo).
+        state: >
+          {% if is_state('input_boolean.hi_centrale_vincolo_orari', 'off') %}true
+          {% elif not is_state('input_select.hi_clima_stagione', 'inverno') %}false
+          {% else %}
+            {% set i = states('input_datetime.hi_centrale_inizio') %}
+            {% set f = states('input_datetime.hi_centrale_fine') %}
+            {% set o = now().strftime('%H:%M:%S') %}
+            {% if i in ['unknown', 'unavailable'] or f in ['unknown', 'unavailable'] %}true
+            {% elif i <= f %}{{ i <= o < f }}
+            {% else %}{{ o >= i or o < f }}{% endif %}
+          {% endif %}
+        attributes:
+          vincolo_attivo: "{{ is_state('input_boolean.hi_centrale_vincolo_orari', 'on') }}"
   - sensor:
       - name: Temperatura esterna
         unique_id: hi_temperatura_esterna
@@ -175,6 +211,15 @@ script:
     icon: mdi:restore
     mode: single
     sequence:
+      - action: input_boolean.turn_off
+        target: {entity_id: input_boolean.hi_centrale_vincolo_orari}
+      # Orari indicativi: sostituire con quelli del regolamento condominiale.
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_centrale_inizio}
+        data: {time: "05:00:00"}
+      - action: input_datetime.set_datetime
+        target: {entity_id: input_datetime.hi_centrale_fine}
+        data: {time: "22:00:00"}
       - repeat:
           for_each:
             - {e: input_number.hi_clima_assenza, v: 17}

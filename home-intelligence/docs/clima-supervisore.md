@@ -4,8 +4,12 @@
 
 | Zona | Fonte idronica (termostato) | Pompa di calore | Note |
 |---|---|---|---|
-| Piano terra | **pavimento radiante** (un circuito) | Daikin Perfera FTXM71N2V1B | i 2 termoarredi dei bagni non sono comandati dal supervisore |
-| Mansarda | **radiatori** (~3 termosifoni + termoarredo bagno) | Daikin Perfera FTXM-N | inerzia minore: tempi minimi di 20 minuti e inerzia di 0,25 h di default |
+| Piano inferiore (2° piano) | **pavimento radiante**, un circuito | Daikin Perfera FTXM71N2V1B | 2 termoarredi ad acqua nei bagni, sullo stesso impianto |
+| Mansarda (open space + bagno) | **radiatori**: ~3 termosifoni + termoarredo bagno | Daikin Perfera FTXM-N | inerzia minore: 20 min e 0,25 h di default |
+
+- **Acqua calda dalla caldaia condominiale.** Il sistema non comanda caldaie: il termostato apre o chiude soltanto la valvola di zona (contatto pulito), forse insieme a un circolatore.
+- **Orari condominiali:** attivando `input_boolean.hi_centrale_vincolo_orari` e impostando accensione e spegnimento, fuori orario il supervisore non conta sulla fonte idronica e, se disponibile, usa la pompa di calore (`binary_sensor.hi_centrale_disponibile`). Vincolo disattivato di default finché non conosciamo gli orari reali.
+- **Requisiti per i nuovi termostati smart:** relè a **contatto pulito** (NO/COM), funzionamento **a batteria** (al muro ci sono solo i 2 fili verso la valvola, niente neutro né 230 V), integrazione locale con HA (Zigbee/Matter preferibili).
 
 Nel codice la decisione `pav` indica la **fonte idronica** della zona, cioè pavimento o radiatori. Tempi minimi e compensazione dell'inerzia sono **per zona** (`input_number.hi_clima_<zona>_idro_min_on/off`, `hi_clima_<zona>_inerzia_ore`). Né il pavimento né i radiatori vengono mai usati in raffrescamento.
 

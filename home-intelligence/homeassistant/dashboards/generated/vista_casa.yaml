@@ -16,7 +16,7 @@ sections:
     heading_style: title
     icon: mdi:floor-plan
   - type: markdown
-    content: '## Piano terra
+    content: '## Piano inferiore
 
       Salotto {{ ''💡'' if is_state(''binary_sensor.hi_area_inferiore_salotto_luci'',''on'') else ''''
       }}{{ '' '' ~ states(''sensor.hi_area_inferiore_salotto_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_inferiore_salotto_temperatura'')
@@ -42,7 +42,7 @@ sections:
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_balcone_camera_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_balcone_camera_temperatura'')
       else '''' }}'
   - type: button
-    name: Apri Piano terra
+    name: Apri Piano inferiore
     icon: mdi:home-floor-0
     show_state: false
     tap_action:
@@ -51,12 +51,10 @@ sections:
   - type: markdown
     content: '## Mansarda
 
-      Mansarda principale {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_principale_luci'',''on'')
+      Open space mansarda {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_principale_luci'',''on'')
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_principale_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_principale_temperatura'')
       else '''' }} · Bagno mansarda {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_bagno_luci'',''on'')
       else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_bagno_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_bagno_temperatura'')
-      else '''' }} · Mansarda secondaria {{ ''💡'' if is_state(''binary_sensor.hi_area_mansarda_secondaria_luci'',''on'')
-      else '''' }}{{ '' '' ~ states(''sensor.hi_area_mansarda_secondaria_temperatura'') ~ ''°'' if has_value(''sensor.hi_area_mansarda_secondaria_temperatura'')
       else '''' }}'
   - type: button
     name: Apri Mansarda

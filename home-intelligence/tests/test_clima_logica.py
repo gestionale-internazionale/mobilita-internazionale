@@ -130,6 +130,15 @@ class TestInverno:
         r = decidi(ha, temp=19.8, nome_idro="Radiatori")
         assert r["motivo"].startswith("Radiatori come fonte di base") and r["pav"] == "on"
 
+    def test_caldaia_condominiale_spenta_usa_pdc(self, ha):
+        r = decidi(ha, temp=19.8, centrale=False)
+        assert r["primaria"] == "pdc" and r["pdc"] == "heat" and r["pav"] == "invariato"
+        assert "condominiale" in r["motivo"]
+
+    def test_caldaia_condominiale_spenta_senza_pdc(self, ha):
+        r = decidi(ha, temp=19.0, centrale=False, disp_pdc=False)
+        assert r["stato"] == "nessuna_fonte" and r["pav"] == "invariato"
+
     def test_esterna_troppo_fredda_esclude_pdc(self, ha):
         r = decidi(ha, temp=17.0, esterna=-20, pdc_prec="heat", pdc_min_da=999)
         assert r["pdc"] == "off" and r["pav"] == "on"
