@@ -28,35 +28,44 @@ dispositivi:
   # CLIMATIZZAZIONE – dispositivi reali previsti
   # ---------------------------------------------------------------------------
   - id: daikin_inferiore
-    nome: Pompa di calore piano inferiore
+    nome: Pompa di calore salotto (piano inferiore)
     marca: Daikin
-    modello: null                 # DA FORNIRE (unità interna + esterna + adattatore Wi-Fi)
+    modello: Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x
     tipo: pompa_di_calore
-    integrazione: da_verificare   # daikin_onecta (cloud) | daikin (locale, BRP069/BRP072/SKYFi)
+    integrazione: daikin            # integrazione core "Daikin AC", LOCALE (local_polling, scoperta zeroconf)
     area: inferiore_giorno
-    stato: non_disponibile
-    entita: []                    # es. climate.daikin_soggiorno
+    stato: non_disponibile          # identificato e compatibile; da integrare su Green/VM
+    entita: []                      # es. climate.<nome>, sensor.<nome>_inside_temperature, …
     etichette: [hi_pdc_inferiore, hi_monitorato]
-    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, ventola]
-    comando: [accensione, modalita, setpoint, ventola]
+    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna,
+                   ventola, swing, preset, potenza_compressore, energia, frequenza_compressore]
+    comando: [accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer]
     note: >-
-      Compatibilità da verificare sul modello reale. Le funzioni effettivamente
-      esposte (temperatura esterna, consumi, swing, modalità speciali) dipendono
-      da modello e adattatore. Vedi docs/analisi-tecnica.md §Daikin.
+      Adattatore BRP069B4x supportato dall'integrazione core locale (nessun cloud,
+      nessuna chiave richiesta). IP attuale 192.168.1.15: riservarlo nel router
+      (DHCP statico). Le entità effettive (sensori di energia, streamer) dipendono
+      dall'unità: verificarle dopo l'integrazione. Il sensore di temperatura
+      ESTERNA dell'unità può alimentare il ruolo hi_temp_esterna (misura
+      sull'unità esterna: può essere falsata da sole e sbrinamento). La
+      temperatura INTERNA è misurata sull'unità a parete: utile come riferimento
+      provvisorio, non ideale per il supervisore (vedi docs/integrazione-dispositivi.md).
 
   - id: daikin_mansarda
-    nome: Pompa di calore mansarda
+    nome: Seconda pompa di calore (posizione da confermare)
     marca: Daikin
-    modello: null
+    modello: null                   # DA FORNIRE (modello unità interna); adattatore BRP069B4x
     tipo: pompa_di_calore
-    integrazione: da_verificare
-    area: mansarda_principale
+    integrazione: daikin            # stesso adattatore → integrazione core locale
+    area: mansarda_principale       # IPOTESI: da confermare
     stato: non_disponibile
     entita: []
     etichette: [hi_pdc_mansarda, hi_monitorato]
     monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, ventola]
     comando: [accensione, modalita, setpoint, ventola]
-    note: Vedi daikin_inferiore.
+    note: >-
+      Adattatore BRP069B4x (IP attuale 192.168.1.16, da riservare nel router).
+      Confermare modello e ambiente: se non è in mansarda, cambiare area ed
+      etichetta di zona (hi_pdc_inferiore / hi_pdc_mansarda).
 
   - id: termostato_inferiore
     nome: Termostato pavimento piano inferiore
@@ -139,21 +148,108 @@ dispositivi:
   # ---------------------------------------------------------------------------
   # INTERRUTTORI E ALTRI DISPOSITIVI ESISTENTI – da censire
   # ---------------------------------------------------------------------------
-  - id: interruttori_smart
-    nome: Interruttori smart esistenti (gruppo da censire)
-    marca: null                   # DA FORNIRE
+  # Interruttori Sonoff Wi-Fi (app eWeLink). Modelli presenti: MINI (R2,
+  # ESP8266, firmware PSF-BD1-GL) e MINIR4 (ESP32). Integrazione proposta:
+  # SonoffLAN (HACS) in modalità locale con ripiego cloud – vedi
+  # docs/integrazione-dispositivi.md. Area e funzione da confermare.
+  - id: sonoff_lavanderia
+    nome: "Interruttore Lavanderia"
+    marca: SONOFF
+    modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
+    tipo: interruttore
+    integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
+    area: null
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce, hi_monitorato]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+  - id: sonoff_studio
+    nome: "Interruttore Studio"
+    marca: SONOFF
+    modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
+    tipo: interruttore
+    integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
+    area: null
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce, hi_monitorato]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+  - id: sonoff_bagno_mansarda
+    nome: "Interruttore Bagno mansarda"
+    marca: SONOFF
+    modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
+    tipo: interruttore
+    integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
+    area: mansarda_principale
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce, hi_monitorato]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: "Ambiente provvisorio, in futuro un'area 'Bagno mansarda' dedicata."
+  - id: sonoff_scala
+    nome: "Interruttore Scala"
+    marca: SONOFF
+    modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
+    tipo: interruttore
+    integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
+    area: null
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce, hi_monitorato]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+  - id: sonoff_box_silvia
+    nome: "Interruttore Box Silvia"
+    marca: SONOFF
+    modello: MINI R2 o MINIR4      # da confermare (Impostazioni dispositivo in eWeLink)
+    tipo: interruttore
+    integrazione: sonofflan        # HACS AlexxIT/SonoffLAN (proposta)
+    area: null
+    stato: non_disponibile
+    entita: []
+    etichette: [hi_luce, hi_monitorato]
+    monitoraggio: [stato]
+    comando: [on_off]
+    note: "Indicare ambiente/piano e se comanda una luce o un altro carico."
+  - id: sonoff_altri
+    nome: Altri interruttori Sonoff (elenco da completare)
+    marca: SONOFF
     modello: null
     tipo: interruttore
-    integrazione: da_verificare   # Matter / integrazione produttore / bridge
+    integrazione: sonofflan
     area: null
     stato: non_disponibile
     entita: []
     etichette: [hi_luce]
     monitoraggio: [stato]
     comando: [on_off]
+    note: L'elenco nell'app continua oltre i 5 dispositivi visibili nello screenshot.
+
+  # ---------------------------------------------------------------------------
+  # ZIGBEE – previsto
+  # ---------------------------------------------------------------------------
+  - id: coordinatore_zigbee
+    nome: Coordinatore Zigbee USB (SONOFF)
+    marca: SONOFF
+    modello: null                   # consigliato Dongle Plus MG24 (EFR32MG24); ZBDongle-E/P compatibili
+    tipo: coordinatore
+    integrazione: zha               # integrazione core ZHA (alternativa: Zigbee2MQTT)
+    area: locale_tecnico
+    stato: non_disponibile
+    entita: []
+    etichette: []
+    monitoraggio: []
+    comando: []
     note: >-
-      Censire un interruttore per voce quando marca/modello saranno noti,
-      indicando l'area e le etichette (hi_luce, hi_luce_ingresso, …).
+      Collegare a Green con una prolunga USB di 1–2 m, lontano da router Wi-Fi,
+      SSD e porte USB 3. Scegliere un canale Zigbee non sovrapposto al Wi-Fi
+      (es. 15, 20 o 25).
 
   - id: telefoni_companion
     nome: Smartphone con Companion App

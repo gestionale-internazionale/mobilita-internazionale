@@ -46,6 +46,7 @@ Dettagli in [docs/ambiente-sviluppo.md](docs/ambiente-sviluppo.md).
 | [clima-supervisore.md](docs/clima-supervisore.md) | regole del supervisore, sicurezza, attivazione graduale |
 | [presenza-e-modalita.md](docs/presenza-e-modalita.md) | Companion App, occupazione, modalità |
 | [energia.md](docs/energia.md) | ruoli energetici, Energy Dashboard, ottimizzazione |
+| [integrazione-dispositivi.md](docs/integrazione-dispositivi.md) | Daikin, Sonoff, Zigbee: procedure per i dispositivi identificati |
 | [registro-dispositivi.md](docs/registro-dispositivi.md) | dispositivi da configurare (generato) |
 | [stato-funzioni.md](docs/stato-funzioni.md) | funzioni reali / simulate / predisposte, esito dei test |
 | [migrazione-green.md](docs/migrazione-green.md) | procedura passo-passo, backup e ripristino |

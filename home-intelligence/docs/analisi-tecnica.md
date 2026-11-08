@@ -57,6 +57,8 @@ Non si usano API non documentate né l'estrazione di token o credenziali dall'ap
 | **Daikin Onecta** (HACS, community, es. `jwillemsen/daikin_onecta`) | **Cloud** (API ufficiale Daikin Onecta, OAuth tramite developer portal Daikin) | Unità recenti con adattatori Wi-Fi solo-cloud (BRP069C/BRP084…) | Nel 2026 non risulta un'integrazione core ufficiale. L'API cloud Daikin ha un **limite di chiamate giornaliere** e aggiornamenti lenti (minuti). Nella community sono segnalati problemi di autenticazione OAuth: verificare la versione corrente prima di usarla. |
 | Altro (Madoka BLE, Altherma via Modbus/ESPHome) | Locale | Modelli specifici | Da valutare solo dopo aver identificato i modelli |
 
+> **Aggiornamento 08/11/2026:** entrambe le unità usano l'adattatore **BRP069B4x**, supportato dall'integrazione core locale. Onecta non serve. Dettagli in `integrazione-dispositivi.md`.
+
 Conseguenze sul progetto:
 - **nessuna funzione viene presunta**: il modulo clima legge `hvac_modes`, `min_temp` e `max_temp` dell'entità reale e comanda solo ciò che è supportato;
 - con un'integrazione cloud il rilevamento degli interventi manuali aspetta 15 minuti, per assorbire la latenza del polling, e i comandi si inviano solo quando la decisione cambia, così da rispettare il limite di chiamate;
