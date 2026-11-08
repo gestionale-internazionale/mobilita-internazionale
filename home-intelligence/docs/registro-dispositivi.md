@@ -5,7 +5,7 @@
 | Dispositivo | Stato | Tipo | Marca / modello | Integrazione | Area | Etichette | Entità |
 |---|---|---|---|---|---|---|---|
 | Pompa di calore salotto (piano inferiore) | ⚪ non disponibile | pompa_di_calore | Daikin Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x | daikin | Zona giorno | `hi_pdc_inferiore`, `hi_monitorato` | — |
-| Seconda pompa di calore (posizione da confermare) | ⚪ non disponibile | pompa_di_calore | Daikin | daikin | Mansarda principale | `hi_pdc_mansarda`, `hi_monitorato` | — |
+| Pompa di calore mansarda | ⚪ non disponibile | pompa_di_calore | Daikin Perfera serie FTXM-N (taglia da confermare) + adattatore Wi-Fi BRP069B4x | daikin | Mansarda principale | `hi_pdc_mansarda`, `hi_monitorato` | — |
 | Termostato pavimento piano inferiore | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Zona giorno | `hi_termostato_inferiore`, `hi_monitorato` | — |
 | Termostato pavimento mansarda | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Mansarda principale | `hi_termostato_mansarda`, `hi_monitorato` | — |
 | Inverter fotovoltaico (~6 kWp) | ⚪ non disponibile | inverter | _da fornire_ | da_verificare | Locale tecnico | `hi_en_pv_potenza`, `hi_en_pv_energia`, `hi_monitorato` | — |
@@ -43,8 +43,8 @@
 
 - **Pompa di calore salotto (piano inferiore)**: Adattatore BRP069B4x supportato dall'integrazione core locale (nessun cloud, nessuna chiave richiesta). IP attuale 192.168.1.15: riservarlo nel router (DHCP statico). Le entità effettive (sensori di energia, streamer) dipendono dall'unità: verificarle dopo l'integrazione. Il sensore di temperatura ESTERNA dell'unità può alimentare il ruolo hi_temp_esterna (misura sull'unità esterna: può essere falsata da sole e sbrinamento). La temperatura INTERNA è misurata sull'unità a parete: utile come riferimento provvisorio, non ideale per il supervisore (vedi docs/integrazione-dispositivi.md).
   - monitoraggio: stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna, ventola, swing, preset, potenza_compressore, energia, frequenza_compressore; comando: accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer
-- **Seconda pompa di calore (posizione da confermare)**: Adattatore BRP069B4x (IP attuale 192.168.1.16, da riservare nel router). Confermare modello e ambiente: se non è in mansarda, cambiare area ed etichetta di zona (hi_pdc_inferiore / hi_pdc_mansarda).
-  - monitoraggio: stato, modalita, temperatura_impostata, temperatura_interna, ventola; comando: accensione, modalita, setpoint, ventola
+- **Pompa di calore mansarda**: Stessa serie e stesso adattatore dell'unità del salotto: valgono le stesse capacità e avvertenze. IP attuale 192.168.1.16, da riservare nel router. La sigla completa (es. FTXM25N/35N…) serve solo per conoscere la potenza nominale, non per l'integrazione.
+  - monitoraggio: stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna, ventola, swing, preset, potenza_compressore, energia, frequenza_compressore; comando: accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer
 - **Termostato pavimento piano inferiore**: Il supervisore NON comanda valvole, collettori o caldaie: agisce solo sul setpoint del termostato, dopo verifica dell'architettura dell'impianto. Il pavimento non viene MAI usato in raffrescamento.
   - monitoraggio: temperatura, setpoint, stato_richiesta_calore; comando: setpoint, modalita
 - **Termostato pavimento mansarda**: Vedi termostato_inferiore.

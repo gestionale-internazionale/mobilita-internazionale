@@ -10,7 +10,7 @@ Il BRP069B4x è uno degli adattatori supportati (polling LAN, nessun cloud, ness
 | Unità | Modello | IP attuale | Zona (house.yaml) |
 |---|---|---|---|
 | Salotto | Perfera FTXM71N2V1B (2020) + BRP069B4x | 192.168.1.15 | `inferiore` |
-| Seconda | da confermare + BRP069B4x | 192.168.1.16 | `mansarda` (ipotesi) |
+| Mansarda | Perfera serie FTXM-N + BRP069B4x | 192.168.1.16 | `mansarda` |
 
 **Procedura** (su Green o sulla VM HAOS, che devono stare nella stessa LAN dei condizionatori):
 1. Nel router assegna un **IP fisso** (DHCP statico) ai due adattatori.

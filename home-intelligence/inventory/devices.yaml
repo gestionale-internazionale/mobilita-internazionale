@@ -51,21 +51,23 @@ dispositivi:
       provvisorio, non ideale per il supervisore (vedi docs/integrazione-dispositivi.md).
 
   - id: daikin_mansarda
-    nome: Seconda pompa di calore (posizione da confermare)
+    nome: Pompa di calore mansarda
     marca: Daikin
-    modello: null                   # DA FORNIRE (modello unità interna); adattatore BRP069B4x
+    modello: Perfera serie FTXM-N (taglia da confermare) + adattatore Wi-Fi BRP069B4x
     tipo: pompa_di_calore
-    integrazione: daikin            # stesso adattatore → integrazione core locale
-    area: mansarda_principale       # IPOTESI: da confermare
-    stato: non_disponibile
+    integrazione: daikin            # integrazione core "Daikin AC", LOCALE
+    area: mansarda_principale
+    stato: non_disponibile          # identificato e compatibile; da integrare su Green/VM
     entita: []
     etichette: [hi_pdc_mansarda, hi_monitorato]
-    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, ventola]
-    comando: [accensione, modalita, setpoint, ventola]
+    monitoraggio: [stato, modalita, temperatura_impostata, temperatura_interna, temperatura_esterna,
+                   ventola, swing, preset, potenza_compressore, energia, frequenza_compressore]
+    comando: [accensione, modalita, setpoint, ventola, swing, preset_eco_boost_away, streamer]
     note: >-
-      Adattatore BRP069B4x (IP attuale 192.168.1.16, da riservare nel router).
-      Confermare modello e ambiente: se non è in mansarda, cambiare area ed
-      etichetta di zona (hi_pdc_inferiore / hi_pdc_mansarda).
+      Stessa serie e stesso adattatore dell'unità del salotto: valgono le stesse
+      capacità e avvertenze. IP attuale 192.168.1.16, da riservare nel router.
+      La sigla completa (es. FTXM25N/35N…) serve solo per conoscere la potenza
+      nominale, non per l'integrazione.
 
   - id: termostato_inferiore
     nome: Termostato pavimento piano inferiore
