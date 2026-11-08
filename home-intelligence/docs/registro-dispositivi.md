@@ -6,8 +6,8 @@
 |---|---|---|---|---|---|---|---|
 | Pompa di calore salotto (piano inferiore) | ⚪ non disponibile | pompa_di_calore | Daikin Perfera FTXM71N2V1B (unità interna, 2020) + adattatore Wi-Fi BRP069B4x | daikin | Salotto | `hi_pdc_inferiore`, `hi_monitorato` | — |
 | Pompa di calore mansarda | ⚪ non disponibile | pompa_di_calore | Daikin Perfera serie FTXM-N (taglia da confermare) + adattatore Wi-Fi BRP069B4x | daikin | Open space mansarda | `hi_pdc_mansarda`, `hi_monitorato` | — |
-| Termostato piano inferiore (pavimento radiante) | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Salotto | `hi_termostato_inferiore`, `hi_monitorato` | — |
-| Termostato mansarda (radiatori) | ⚪ non disponibile | termostato | _da fornire_ | da_verificare | Open space mansarda | `hi_termostato_mansarda`, `hi_monitorato` | — |
+| Termostato piano inferiore (pavimento radiante) | ⚪ non disponibile | termostato | EZAIOT (piattaforma Tuya Zigbee) termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601 | zigbee2mqtt | Salotto | `hi_termostato_inferiore`, `hi_temp_inferiore`, `hi_monitorato` | — |
+| Termostato mansarda (radiatori) | ⚪ non disponibile | termostato | EZAIOT (piattaforma Tuya Zigbee) termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601 | zigbee2mqtt | Open space mansarda | `hi_termostato_mansarda`, `hi_temp_mansarda`, `hi_monitorato` | — |
 | Termoarredi ad acqua bagni piano inferiore (2) | ⚪ non disponibile | termoarredo | _da fornire_ | nessuna | Bagno |  | — |
 | Inverter fotovoltaico (~6 kWp) | ⚪ non disponibile | inverter | _da fornire_ | da_verificare | Locale tecnico | `hi_en_pv_potenza`, `hi_en_pv_energia`, `hi_monitorato` | — |
 | Sistema di accumulo (10–15 kWh) | ⚪ non disponibile | batteria | _da fornire_ | da_verificare | Locale tecnico | `hi_en_batt_soc`, `hi_en_batt_carica_potenza`, `hi_en_batt_scarica_potenza`, `hi_en_batt_energia_carica`, `hi_en_batt_energia_scarica` | — |
@@ -18,7 +18,7 @@
 | Interruttore Scala | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Scala | `hi_luce`, `hi_monitorato` | — |
 | Interruttore Box Silvia | ⚪ non disponibile | interruttore | SONOFF MINI R2 o MINIR4 | sonofflan | Box | `hi_luce`, `hi_monitorato` | — |
 | Altri interruttori Sonoff (elenco da completare) | ⚪ non disponibile | interruttore | SONOFF | sonofflan | — | `hi_luce` | — |
-| Coordinatore Zigbee USB (SONOFF) | ⚪ non disponibile | coordinatore | SONOFF | zha | Locale tecnico |  | — |
+| Coordinatore Zigbee USB (SONOFF) | ⚪ non disponibile | coordinatore | SONOFF | zigbee2mqtt | Locale tecnico |  | — |
 | Smartphone con Companion App | ⚪ non disponibile | tracker | _da fornire_ | mobile_app | — |  | — |
 | [SIM] Sensori temperatura/umidità | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_temp_inferiore`, `hi_simulazione` | `sensor.sim_temperatura_inferiore` |
 | [SIM] Umidità piano inferiore | 🟣 simulazione | sensore | _da fornire_ | template | Salotto | `hi_umidita_inferiore`, `hi_simulazione` | `sensor.sim_umidita_inferiore` |

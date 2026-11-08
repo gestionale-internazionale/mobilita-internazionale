@@ -56,7 +56,7 @@ Secondo testimonianze della community, il MINIR4 non ha la "DIY mode", ma il con
 ## 3. Zigbee (dongle Sonoff previsto)
 
 - Modello consigliato: **SONOFF Dongle Plus MG24** (EFR32MG24), successore del ZBDongle-E, supportato da ZHA. Vanno bene anche ZBDongle-E e ZBDongle-P.
-- Integrazione: **ZHA** (core, la più semplice). In alternativa Zigbee2MQTT (add-on + broker MQTT), che conviene solo se servono dispositivi supportati unicamente da Z2M. Un dongle serve **una sola** delle due.
+- Integrazione: **Zigbee2MQTT** (add-on Zigbee2MQTT + add-on broker Mosquitto, entrambi disponibili su HAOS/Green). L'ho scelta al posto di ZHA perché i termostati Tuya (TS0601) sono supportati molto meglio da Zigbee2MQTT: in ZHA spesso vengono riconosciuti senza entità. Un dongle serve **una sola** delle due integrazioni.
 - Installazione: prolunga USB da 1–2 m, lontano dal router Wi-Fi e dalle porte USB 3; canale Zigbee 15, 20 o 25.
 - **Primi acquisti utili per il progetto** (non obbligatori):
   - un **sensore di temperatura/umidità per zona** (`hi_temp_inferiore`, `hi_temp_mansarda`): migliora molto il supervisore rispetto al sensore interno del Daikin;
@@ -77,3 +77,17 @@ Il termostato sostitutivo deve avere:
 4. un'entità `climate` con `set_temperature`, che è l'unico comando usato dal supervisore.
 
 Se il modello acquistato è Wi-Fi solo-cloud o richiede la 230 V, valutiamo insieme le alternative prima di installarlo.
+
+### Termostati scelti: EZAIOT Zigbee a batteria (piattaforma Tuya)
+
+Valutazione: **adatti** all'impianto (batteria + contatto pulito per "caldaia a gas"), con queste condizioni:
+
+1. **Variante corretta:** verifica di aver ordinato la versione **Zigbee** (non Wi-Fi) per **caldaia a gas / a batteria** (contatto pulito). Le varianti "riscaldamento ad acqua" ed "elettrico" vogliono la 230 V e non vanno bene.
+2. **Serve il coordinatore Zigbee** (il dongle) per collegarli a HA. Non serve un gateway Tuya né il cloud Tuya.
+3. **Integrazione:** Zigbee2MQTT. Al primo abbinamento annota il *manufacturer id* (stringa `_TZE200_…`/`_TZE284_…`) e verifica che compaia nell'elenco dei dispositivi supportati da Zigbee2MQTT. Mandamelo e controllo io quali funzioni espone.
+4. **Modalità manuale:** il termostato ha programmi interni. Va impostato in modalità **manuale** (preset `manual` o simile), altrimenti il suo programma sovrascrive il setpoint inviato da HA.
+5. **Dispositivo a batteria:** i comandi possono arrivare con qualche secondo o minuto di ritardo e la temperatura viene riportata a intervalli. Il supervisore lo tollera (valuta ogni minuto e rispetta tempi minimi lunghi).
+6. **Sensore di temperatura:** il termostato è in ambiente, quindi la sua temperatura (`current_temperature`) è più affidabile di quella del Daikin. Nel registro ha già l'etichetta `hi_temp_<zona>`: le macro del progetto leggono direttamente la temperatura dalle entità `climate`.
+7. **Installazione:** collega i 2 fili della valvola ai morsetti del contatto pulito (spesso NO/COM). Prima di sostituire il vecchio termostato, fotografa il cablaggio esistente.
+
+Fonti: [Zigbee2MQTT – TS0601 thermostat](https://www.zigbee2mqtt.io/devices/TS0601_thermostat.html) · [Beca BHT-003 (gas boiler)](https://zigbee.blakadder.com/Beca_BHT-003.html) · [TS0601 senza entità in ZHA (community HA)](https://community.home-assistant.io/t/ts0601-by-tze200-viy9ihs7-no-functions/804150)

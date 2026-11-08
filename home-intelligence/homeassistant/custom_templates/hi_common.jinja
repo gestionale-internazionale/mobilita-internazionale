@@ -30,11 +30,12 @@
 {{- ns.l | to_json -}}
 {%- endmacro -%}
 
-{#- Media dei valori numerici validi delle entità del ruolo ('' se nessuno). -#}
+{#- Media dei valori numerici validi delle entità del ruolo ('' se nessuno).
+    Per le entità climate (es. termostati) usa l'attributo current_temperature. -#}
 {%- macro hi_media(etichetta, decimali=1) -%}
 {%- set ns = namespace(v=[]) -%}
 {%- for e in hi_ruolo(etichetta) | from_json -%}
-{%- set s = states(e) -%}
+{%- set s = state_attr(e, 'current_temperature') if e.startswith('climate.') else states(e) -%}
 {%- if s | is_number -%}{%- set ns.v = ns.v + [s | float] -%}{%- endif -%}
 {%- endfor -%}
 {%- if ns.v | count > 0 -%}{{- (ns.v | sum / ns.v | count) | round(decimali) -}}{%- endif -%}
@@ -44,7 +45,8 @@
 {%- macro hi_validi(etichetta) -%}
 {%- set ns = namespace(n=0) -%}
 {%- for e in hi_ruolo(etichetta) | from_json -%}
-{%- if states(e) | is_number -%}{%- set ns.n = ns.n + 1 -%}{%- endif -%}
+{%- set s = state_attr(e, 'current_temperature') if e.startswith('climate.') else states(e) -%}
+{%- if s | is_number -%}{%- set ns.n = ns.n + 1 -%}{%- endif -%}
 {%- endfor -%}
 {{- ns.n -}}
 {%- endmacro -%}

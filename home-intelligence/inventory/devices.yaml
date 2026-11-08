@@ -71,14 +71,14 @@ dispositivi:
 
   - id: termostato_inferiore
     nome: Termostato piano inferiore (pavimento radiante)
-    marca: null                   # acquistato, modello DA FORNIRE
-    modello: null
+    marca: EZAIOT (piattaforma Tuya Zigbee)
+    modello: termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601
     tipo: termostato
-    integrazione: da_verificare   # preferibile Matter/Zigbee/locale
+    integrazione: zigbee2mqtt       # i TS0601 Tuya sono supportati meglio da Z2M che da ZHA
     area: inferiore_salotto
     stato: non_disponibile
     entita: []
-    etichette: [hi_termostato_inferiore, hi_monitorato]
+    etichette: [hi_termostato_inferiore, hi_temp_inferiore, hi_monitorato]
     monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
     comando: [setpoint, modalita]
     note: >-
@@ -92,14 +92,14 @@ dispositivi:
 
   - id: termostato_mansarda
     nome: Termostato mansarda (radiatori)
-    marca: null
-    modello: null
+    marca: EZAIOT (piattaforma Tuya Zigbee)
+    modello: termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601
     tipo: termostato
-    integrazione: da_verificare
+    integrazione: zigbee2mqtt       # i TS0601 Tuya sono supportati meglio da Z2M che da ZHA
     area: mansarda_principale
     stato: non_disponibile
     entita: []
-    etichette: [hi_termostato_mansarda, hi_monitorato]
+    etichette: [hi_termostato_mansarda, hi_temp_mansarda, hi_monitorato]
     monitoraggio: [temperatura, setpoint, stato_richiesta_calore]
     comando: [setpoint, modalita]
     note: >-
@@ -269,7 +269,7 @@ dispositivi:
     marca: SONOFF
     modello: null                   # consigliato Dongle Plus MG24 (EFR32MG24); ZBDongle-E/P compatibili
     tipo: coordinatore
-    integrazione: zha               # integrazione core ZHA (alternativa: Zigbee2MQTT)
+    integrazione: zigbee2mqtt       # add-on Zigbee2MQTT + broker Mosquitto (scelto per i termostati Tuya)
     area: locale_tecnico
     stato: non_disponibile
     entita: []
