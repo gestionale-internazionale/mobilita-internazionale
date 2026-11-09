@@ -72,7 +72,7 @@ dispositivi:
   - id: termostato_inferiore
     nome: Termostato piano inferiore (pavimento radiante)
     marca: EZAIOT (piattaforma Tuya Zigbee)
-    modello: termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601
+    modello: V9BZ (Zigbee, nero) – Shenzhen Rti-Tek, a batteria per caldaia a gas/acqua; probabile Tuya TS0601
     tipo: termostato
     integrazione: zigbee2mqtt       # i TS0601 Tuya sono supportati meglio da Z2M che da ZHA
     area: inferiore_salotto
@@ -96,7 +96,7 @@ dispositivi:
   - id: termostato_mansarda
     nome: Termostato mansarda (radiatori)
     marca: EZAIOT (piattaforma Tuya Zigbee)
-    modello: termostato Zigbee a batteria per caldaia a gas (contatto pulito), probabile TS0601
+    modello: V9BZ (Zigbee, nero) – Shenzhen Rti-Tek, a batteria per caldaia a gas/acqua; probabile Tuya TS0601
     tipo: termostato
     integrazione: zigbee2mqtt       # i TS0601 Tuya sono supportati meglio da Z2M che da ZHA
     area: mansarda_principale

@@ -127,3 +127,13 @@ Prima di intervenire **togli corrente** dall'interruttore del circuito della val
 | Protezione | IP20 | solo interni |
 
 **Da verificare ancora:** la **portata del contatto** (deve reggere 230 V AC, almeno 3 A) e i **nomi dei morsetti**. Non sono in questa pagina: di solito si trovano nello schema di collegamento del manuale o sul retro del termostato.
+
+### Modello esatto: **V9BZ** (Zigbee, nero), produttore Shenzhen Rti-Tek
+
+- Variante corretta: **Zigbee**, per caldaia a gas/acqua, a batteria.
+- Zigbee2MQTT ha già altri dispositivi Rti-Tek (sensori), ma **non risulta un'entrata con il nome V9BZ**. Al primo abbinamento il termostato si presenterà probabilmente come Tuya `TS0601` con un codice `_TZE…`. Due casi possibili:
+  1. **riconosciuto** (stesso firmware di un termostato Tuya già supportato): si usa subito;
+  2. **non supportato**: si scrive un piccolo *convertitore esterno* di Zigbee2MQTT (file JavaScript in `/config/zigbee2mqtt/`) che mappa i datapoint Tuya: accensione, setpoint, temperatura, modalità, stato del relè, batteria. Va fatto una sola volta; lo prepareremo insieme leggendo i datapoint dal log di Zigbee2MQTT.
+- In entrambi i casi il termostato funziona da solo, come termostato normale, anche prima dell'integrazione.
+
+Fonti: [Zigbee2MQTT – Rti-Tek STHZB](https://www.zigbee2mqtt.io/devices/STHZB.html) · [TS0601 thermostat](https://www.zigbee2mqtt.io/devices/TS0601_thermostat.html)
