@@ -87,7 +87,8 @@ dispositivi:
       caldaia CONDOMINIALE: nessun comando alla caldaia. Il sostituto smart
       deve avere relè a contatto pulito (NO/COM, carico ≥ 1 A) e funzionare A
       BATTERIA (nessun neutro/230 V al muro). Verificare la compatibilità del
-      modello acquistato prima dell'installazione.
+      modello acquistato prima dell'installazione. Vecchio termostato: relè 8(3) A
+      250 V, morsetti L (comune) / L1 (NA) / L2 (NC); fili da spostare su COM/NO.
       Comanda il circuito a pavimento del piano inferiore.
 
   - id: termostato_mansarda
@@ -108,7 +109,8 @@ dispositivi:
       caldaia CONDOMINIALE: nessun comando alla caldaia. Il sostituto smart
       deve avere relè a contatto pulito (NO/COM, carico ≥ 1 A) e funzionare A
       BATTERIA (nessun neutro/230 V al muro). Verificare la compatibilità del
-      modello acquistato prima dell'installazione.
+      modello acquistato prima dell'installazione. Vecchio termostato: relè 8(3) A
+      250 V, morsetti L (comune) / L1 (NA) / L2 (NC); fili da spostare su COM/NO.
       Comanda ~3 termosifoni + termoarredo del bagno (fonte "radiatori").
 
   - id: termoarredi_piano_inferiore

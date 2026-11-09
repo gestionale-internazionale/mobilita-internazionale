@@ -98,3 +98,19 @@ Valutazione: **adatti** all'impianto (batteria + contatto pulito per "caldaia a 
 7. **Installazione:** collega i 2 fili della valvola ai morsetti del contatto pulito (spesso NO/COM). Prima di sostituire il vecchio termostato, fotografa il cablaggio esistente.
 
 Fonti: [Zigbee2MQTT – TS0601 thermostat](https://www.zigbee2mqtt.io/devices/TS0601_thermostat.html) · [Beca BHT-003 (gas boiler)](https://zigbee.blakadder.com/Beca_BHT-003.html) · [TS0601 senza entità in ZHA (community HA)](https://community.home-assistant.io/t/ts0601-by-tze200-viy9ihs7-no-functions/804150)
+
+### Cablaggio del termostato attuale (foto del 09/11/2026)
+
+- Relè interno: Matsushita/Panasonic DK1a1b-L-3V, contatti **8(3) A 250 V AC**, morsettiera **L1 – L2 – L**.
+- Lo schema stampato sulla base (morsetti 1-2-3) indica: **L (3) = comune** (ingresso), **L1 (1) = contatto NA** (chiude quando chiede calore, verso il carico), **L2 (2) = contatto NC**. La corrispondenza L1/L2/L ↔ 1/2/3 è dedotta dalla posizione e va confermata.
+- Sono collegati **due fili** (nero e marrone): è un contatto pulito che interrompe la linea della valvola di zona. Il marrone fa pensare alla fase a **230 V**: va trattato come circuito sotto tensione.
+
+**Corrispondenza con il nuovo termostato** (morsetti a contatto pulito):
+
+| Vecchio | Nuovo |
+|---|---|
+| filo su **L** (comune) | **COM** |
+| filo su **L1** (normalmente aperto) | **NO** |
+| L2 (NC) | non usato |
+
+Prima di intervenire **togli corrente** dall'interruttore del circuito della valvola. Il relè del nuovo termostato deve reggere **230 V AC, almeno 3 A**: verificalo sui dati di targa o sul manuale.
