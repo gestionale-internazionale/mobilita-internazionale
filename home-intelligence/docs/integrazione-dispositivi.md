@@ -114,3 +114,16 @@ Fonti: [Zigbee2MQTT – TS0601 thermostat](https://www.zigbee2mqtt.io/devices/TS
 | L2 (NC) | non usato |
 
 Prima di intervenire **togli corrente** dall'interruttore del circuito della valvola. Il relè del nuovo termostato deve reggere **230 V AC, almeno 3 A**: verificalo sui dati di targa o sul manuale.
+
+### Dati tecnici EZAIOT (dal manuale, 09/11/2026)
+
+| Voce | Valore | Implicazione |
+|---|---|---|
+| Alimentazione | 3 × AA alcaline | ✅ compatibile, nessuna 230 V al muro |
+| Campo setpoint | 5–40 °C | il setback di riposo (15 °C) è nel campo |
+| Precisione | 0,5 °C | coerente con l'isteresi del supervisore (0,3 °C sulla media) |
+| Isteresi interna | 0,1–10 °C (configurabile) | impostare ~0,5 °C (pavimento) e ~0,3–0,5 °C (radiatori): limita i cicli della valvola |
+| Protocollo | Tuya Zigbee 3.0 | Zigbee2MQTT + dongle MG24 |
+| Protezione | IP20 | solo interni |
+
+**Da verificare ancora:** la **portata del contatto** (deve reggere 230 V AC, almeno 3 A) e i **nomi dei morsetti**. Non sono in questa pagina: di solito si trovano nello schema di collegamento del manuale o sul retro del termostato.
