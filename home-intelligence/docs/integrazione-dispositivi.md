@@ -137,3 +137,9 @@ Prima di intervenire **togli corrente** dall'interruttore del circuito della val
 - In entrambi i casi il termostato funziona da solo, come termostato normale, anche prima dell'integrazione.
 
 Fonti: [Zigbee2MQTT – Rti-Tek STHZB](https://www.zigbee2mqtt.io/devices/STHZB.html) · [TS0601 thermostat](https://www.zigbee2mqtt.io/devices/TS0601_thermostat.html)
+
+### Morsettiera del V9BZ (foto del 09/11/2026)
+
+- La base a muro ha una **morsettiera a 2 poli senza sigle**. Il corpo del termostato si innesta sulla base con 2 contatti. È un **contatto pulito semplice (NA)**: i due fili vanno sui due morsetti, **senza polarità**.
+- Collegamento: i due fili che oggi sono su **L** e **L1** del vecchio termostato vanno uno per morsetto. L2 (NC) non si usa.
+- **Portata del contatto ancora non indicata.** La morsettiera è piccola e il dato non compare né sulla base né sulla scatola. Prima di collegare un circuito a 230 V serve una conferma: dal manuale (pagina dello schema), dal venditore o produttore (Rti-Tek), oppure misurando la tensione sui fili e verificando la valvola di zona (molte sono a 230 V, alcune a 24 V).
